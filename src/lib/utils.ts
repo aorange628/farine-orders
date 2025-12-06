@@ -19,16 +19,21 @@ export function calculateEarliestPickupDate(categoryName: string): Date {
     daysToAdd = isBeforeNoon ? 1 : 2;
   }
   
-  let pickupDate = addDays(now, daysToAdd);
+  // Ajouter des JOURS OUVRABLES (en sautant dim/lun dans le comptage)
+  let pickupDate = new Date(now);
+  let addedDays = 0;
   
-  // Sauter les dimanches et lundis
-  while (pickupDate.getDay() === 0 || pickupDate.getDay() === 1) {
+  while (addedDays < daysToAdd) {
     pickupDate = addDays(pickupDate, 1);
+    
+    // Si ce jour n'est pas dimanche (0) ou lundi (1), on le compte
+    if (pickupDate.getDay() !== 0 && pickupDate.getDay() !== 1) {
+      addedDays++;
+    }
   }
   
   return pickupDate;
 }
-
 /**
  * Génère un numéro de commande unique
  * Format: YYYYMMDDLXXX
