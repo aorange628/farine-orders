@@ -151,21 +151,22 @@ export default function ProductList({ onAddToCart, cart }: ProductListProps) {
     >
       <Minus className="w-4 h-4" />
     </button>
-    <input
-      type="number"
-      min="0"
-      step={product.unit === 'kg' ? '0.1' : '1'}
-      value={quantity}
-      onChange={(e) => {
-        const value = parseFloat(e.target.value) || 0;
-        setQuantities(prev => {
-          const newQuantities = new Map(prev);
-          newQuantities.set(product.id, Math.max(0, value));
-          return newQuantities;
-        });
-      }}
-      className="w-24 text-center border-0 focus:outline-none focus:ring-0 text-base font-medium text-black"
-    />
+   <input
+  type="number"
+  min="0"
+  step={product.unit === 'kg' ? '0.1' : '1'}
+  value={quantity}
+  onChange={(e) => {
+    const value = parseFloat(e.target.value) || 0;
+    setQuantities(prev => {
+      const newQuantities = new Map(prev);
+      newQuantities.set(product.id, Math.max(0, value));
+      return newQuantities;
+    });
+  }}
+  style={{ color: '#000000', fontSize: '16px' }}
+  className="w-24 text-center border-0 focus:outline-none focus:ring-0"
+/>
     <button
       onClick={() => handleQuantityChange(product.id, product.unit === 'kg' ? 0.1 : 1)}
       className="p-2 hover:bg-gray-100 rounded-r-lg"
