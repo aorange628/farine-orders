@@ -353,3 +353,74 @@ export default function OrderDetailPage() {
                 style={{
                   backgroundColor: status ? status.color + '33' : '#gray',
                   color: status?.color || '#333',
+}}
+              >
+                {order.status}
+              </div>
+            </div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Modifier le statut
+            </label>
+            <select
+              value={formData.status}
+              onChange={(e) =>
+                setFormData({ ...formData, status: e.target.value })
+              }
+              className="w-full"
+            >
+              {statuses.map((s) => (
+                <option key={s.id} value={s.name}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Informations fixes */}
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">
+              Informations
+            </h2>
+            <div className="space-y-3 text-sm">
+              <div>
+                <span className="text-gray-600">N° de commande :</span>
+                <div className="font-mono font-semibold">{order.order_number}</div>
+              </div>
+              <div>
+                <span className="text-gray-600">Date de création :</span>
+                <div className="font-medium">
+                  {formatDate(new Date(order.created_at), 'PPP à HH:mm')}
+                </div>
+              </div>
+              <div>
+                <span className="text-gray-600">Montant total :</span>
+                <div className="font-bold text-lg text-farine-green">
+                  {formatPrice(order.total_ttc)}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Bouton Enregistrer */}
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="w-full btn-primary flex items-center justify-center gap-2 py-3"
+          >
+            {saving ? (
+              <>
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                Enregistrement...
+              </>
+            ) : (
+              <>
+                <Save className="w-5 h-5" />
+                Enregistrer les modifications
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
