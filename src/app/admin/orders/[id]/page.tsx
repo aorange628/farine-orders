@@ -35,7 +35,6 @@ export default function OrderDetailPage() {
 
   async function fetchOrderDetails() {
     try {
-      // Récupérer la commande
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
         .select('*')
@@ -54,7 +53,6 @@ export default function OrderDetailPage() {
         status: orderData.status,
       });
 
-      // Récupérer les lignes de commande
       const { data: itemsData, error: itemsError } = await supabase
         .from('order_items')
         .select('*')
@@ -63,7 +61,6 @@ export default function OrderDetailPage() {
       if (itemsError) throw itemsError;
       setItems(itemsData || []);
 
-      // Récupérer les statuts
       const { data: statusesData, error: statusesError } = await supabase
         .from('order_statuses')
         .select('*')
@@ -156,7 +153,6 @@ export default function OrderDetailPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Link
@@ -193,9 +189,7 @@ export default function OrderDetailPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Colonne gauche : Informations modifiables */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Informations client */}
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4">
               Informations client
@@ -228,7 +222,6 @@ export default function OrderDetailPage() {
             </div>
           </div>
 
-          {/* Date et heure d'enlèvement */}
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4">
               Date et heure d'enlèvement
@@ -261,7 +254,6 @@ export default function OrderDetailPage() {
             </div>
           </div>
 
-          {/* Commentaires */}
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4">
               Commentaires
@@ -292,7 +284,6 @@ export default function OrderDetailPage() {
             </div>
           </div>
 
-          {/* Produits commandés */}
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4">
               Produits commandés
@@ -342,15 +333,13 @@ export default function OrderDetailPage() {
           </div>
         </div>
 
-        {/* Colonne droite : Statut et actions */}
         <div className="space-y-6">
-          {/* Statut */}
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4">Statut</h2>
             <div className="mb-4">
               <div
                 className="inline-block px-4 py-2 rounded-full text-sm font-medium mb-4"
-               style={{
+                style={{
                   backgroundColor: status ? status.color + '33' : '#gray',
                   color: status?.color || '#333',
                 }}
@@ -376,7 +365,6 @@ export default function OrderDetailPage() {
             </select>
           </div>
 
-          {/* Informations fixes */}
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4">
               Informations
@@ -401,7 +389,6 @@ export default function OrderDetailPage() {
             </div>
           </div>
 
-          {/* Bouton Enregistrer */}
           <button
             onClick={handleSave}
             disabled={saving}
