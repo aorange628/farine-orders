@@ -91,14 +91,14 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Message d'accueil */}
-        {welcomeMessage && (
-          <div className="text-center mb-6">
-            <p className="text-lg text-gray-700 max-w-2xl mx-auto">
-              {welcomeMessage}
-            </p>
-          </div>
-        )}
+      {/* Message d'accueil */}
+{welcomeMessage && (
+  <div className="text-center mb-6">
+    <p className="text-lg text-gray-700 max-w-2xl mx-auto whitespace-pre-line">
+      {welcomeMessage}
+    </p>
+  </div>
+)}
 
         {/* Horaires */}
         {!loading && shopHours.length > 0 && (
