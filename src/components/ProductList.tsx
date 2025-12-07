@@ -56,15 +56,19 @@ export default function ProductList({ onAddToCart, cart }: ProductListProps) {
     }
   }
 
-  function handleQuantityChange(productId: number, delta: number) {
-    setQuantities(prev => {
-      const newQuantities = new Map(prev);
-      const currentQty = newQuantities.get(productId) || 0;
-      const newQty = Math.max(0, currentQty + delta);
-      newQuantities.set(productId, newQty);
-      return newQuantities;
-    });
-  }
+ function handleQuantityChange(productId: number, delta: number) {
+  setQuantities(prev => {
+    const newQuantities = new Map(prev);
+    const currentQty = newQuantities.get(productId) || 0;
+    const newQty = currentQty + delta;
+    
+    // Arrondir à 1 décimale pour éviter les erreurs de précision
+    const roundedQty = Math.round(Math.max(0, newQty) * 10) / 10;
+    
+    newQuantities.set(productId, roundedQty);
+    return newQuantities;
+  });
+}
 
   function handleAddToCart(product: Product) {
     const quantity = quantities.get(product.id) || 0;
