@@ -352,8 +352,8 @@ export default function OrderDetailPage() {
                 className="inline-block px-4 py-2 rounded-full text-sm font-medium mb-4"
                 style={{
                   backgroundColor: status ? status.color + '33' : '#gray',
-                  color: status?.color || '#333',
-}}
+              color: status?.color || '#333',
+                }}
               >
                 {order.status}
               </div>
