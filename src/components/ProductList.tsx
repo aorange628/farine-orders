@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Category, Product } from '@/types';
 import { formatPrice } from '@/lib/utils';
-import { Plus, Minus } from 'lucide-react';
 
 interface ProductListProps {
   onAddToCart: (product: Product, quantity: number) => void;
@@ -54,20 +53,6 @@ export default function ProductList({ onAddToCart, cart }: ProductListProps) {
     } finally {
       setLoading(false);
     }
-  }
-
-  function handleQuantityChange(productId: number, delta: number) {
-    setQuantities(prev => {
-      const newQuantities = new Map(prev);
-      const currentQty = newQuantities.get(productId) || 0;
-      const newQty = currentQty + delta;
-      
-      // Arrondir à 1 décimale pour éviter les erreurs de précision
-      const roundedQty = Math.round(Math.max(0, newQty) * 10) / 10;
-      
-      newQuantities.set(productId, roundedQty);
-      return newQuantities;
-    });
   }
 
   function handleAddToCart(product: Product) {
@@ -143,36 +128,21 @@ export default function ProductList({ onAddToCart, cart }: ProductListProps) {
 
                     {/* Contrôles quantité */}
                     <div className="flex items-center gap-3">
-                      <div className="flex items-center border border-gray-300 rounded-lg">
-                        <button
-                          onClick={() => handleQuantityChange(product.id, product.unit === 'kg' ? -0.1 : -1)}
-                          disabled={quantity === 0}
-                          className="p-2 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed rounded-l-lg"
-                        >
-                          <Minus className="w-4 h-4" />
-                        </button>
-                        <input
-                          type="number"
-                          min="0"
-                          step={product.unit === 'kg' ? '0.1' : '1'}
-                          value={quantity === 0 ? '' : quantity}
-                          onChange={(e) => {
-                            const value = parseFloat(e.target.value) || 0;
-                            setQuantities(prev => {
-                              const newQuantities = new Map(prev);
-                              newQuantities.set(product.id, Math.max(0, value));
-                              return newQuantities;
-                            });
-                          }}
-                          className="min-w-[200px] text-center border-0 focus:outline-none focus:ring-0"
-                        />
-                        <button
-                          onClick={() => handleQuantityChange(product.id, product.unit === 'kg' ? 0.1 : 1)}
-                          className="p-2 hover:bg-gray-100 rounded-r-lg"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </button>
-                      </div>
+                      <input
+                        type="number"
+                        min="0"
+                        step={product.unit === 'kg' ? '0.1' : '1'}
+                        value={quantity === 0 ? '' : quantity}
+                        onChange={(e) => {
+                          const value = parseFloat(e.target.value) || 0;
+                          setQuantities(prev => {
+                            const newQuantities = new Map(prev);
+                            newQuantities.set(product.id, Math.max(0, value));
+                            return newQuantities;
+                          });
+                        }}
+                        className="w-28 px-3 py-2 text-center border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-farine-green"
+                      />
                       <button
                         onClick={() => handleAddToCart(product)}
                         disabled={quantity === 0}
