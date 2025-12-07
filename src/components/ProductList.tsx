@@ -141,7 +141,7 @@ export default function ProductList({ onAddToCart, cart }: ProductListProps) {
 <div className="flex items-center gap-3">
   <div className="flex items-center border border-gray-300 rounded-lg">
     <button
-      onClick={() => handleQuantityChange(product.id, product.unit === 'kilogramme' ? -0.1 : -1)}
+      onClick={() => handleQuantityChange(product.id, product.unit === 'kg' ? -0.1 : -1)}
       disabled={quantity === 0}
       className="p-2 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed rounded-l-lg"
     >
@@ -150,7 +150,7 @@ export default function ProductList({ onAddToCart, cart }: ProductListProps) {
     <input
       type="number"
       min="0"
-      step={product.unit === 'kilogramme' ? '0.1' : '1'}
+      step={product.unit === 'kg' ? '0.1' : '1'}
       value={quantity}
       onChange={(e) => {
         const value = parseFloat(e.target.value) || 0;
@@ -163,7 +163,7 @@ export default function ProductList({ onAddToCart, cart }: ProductListProps) {
       className="w-16 text-center border-0 focus:outline-none focus:ring-0"
     />
     <button
-      onClick={() => handleQuantityChange(product.id, product.unit === 'kilogramme' ? 0.1 : 1)}
+      onClick={() => handleQuantityChange(product.id, product.unit === 'kg' ? 0.1 : 1)}
       className="p-2 hover:bg-gray-100 rounded-r-lg"
     >
       <Plus className="w-4 h-4" />
