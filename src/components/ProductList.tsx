@@ -164,7 +164,7 @@ export default function ProductList({ onAddToCart, cart }: ProductListProps) {
           return newQuantities;
         });
       }}
-      className="w-24 text-center border-0 focus:outline-none focus:ring-0 text-base font-medium text-black""
+      className="w-24 text-center border-0 focus:outline-none focus:ring-0 text-base font-medium text-black"
     />
     <button
       onClick={() => handleQuantityChange(product.id, product.unit === 'kg' ? 0.1 : 1)}
