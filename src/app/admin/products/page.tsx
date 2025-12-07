@@ -337,8 +337,8 @@ export default function ProductsPage() {
                     onChange={(e) => setFormData({ ...formData, unit: e.target.value as 'unité' | 'kg' })}
                     required
                   >
-                    <option value="unité">À l'unité</option>
-                    <option value="kg">Au kilogramme</option>
+                    <option value="unité">unité</option>
+                    <option value="kg">kg</option>
                   </select>
                 </div>
               </div>
