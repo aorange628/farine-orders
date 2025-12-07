@@ -68,7 +68,7 @@ input[type="time"],
 input[type="number"],
 textarea,
 select {
-  @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-farine-green focus:border-transparent;
+  @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-farine-green focus:border-transparent text-black;
 }
 
 /* Styles pour les boutons */
