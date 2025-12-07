@@ -152,11 +152,10 @@ export default function ProductList({ onAddToCart, cart }: ProductListProps) {
       <Minus className="w-4 h-4" />
     </button>
    <input
-     key={`qty-${product.id}-${quantity}`}
   type="number"
   min="0"
   step={product.unit === 'kg' ? '0.1' : '1'}
-  value={quantity}
+  value={quantity === 0 ? '' : quantity}
   onChange={(e) => {
     const value = parseFloat(e.target.value) || 0;
     setQuantities(prev => {
