@@ -93,3 +93,7 @@ select {
 .status-badge {
   @apply inline-block px-3 py-1 rounded-full text-sm font-medium;
 }
+input[type="number"] {
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+}
