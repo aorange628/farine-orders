@@ -11,6 +11,7 @@ import {
   Settings,
   LogOut,
   ShoppingCart,
+  Calendar,
 } from 'lucide-react';
 
 interface NavItem {
@@ -47,8 +48,13 @@ const navItems: NavItem[] = [
   },
   {
     href: '/admin/settings',
-    label: 'Paramètres',
+label: 'Paramètres',
     icon: <Settings className="w-5 h-5" />,
+  },
+  {
+    href: '/admin/calendar',
+    label: 'Calendrier',
+    icon: <Calendar className="w-5 h-5" />,
   },
 ];
 
