@@ -19,7 +19,10 @@ export default function DayEditorModal({ day, onClose, onSave, onDelete }: DayEd
   const [saving, setSaving] = useState(false);
 
   const hasOverride = day.override !== null;
-  const isDefaultBehavior = day.isDefaultClosed === isClosed && !hasOverride;
+  const isDefaultBehavior = 
+  day.isDefaultClosed === isClosed && 
+  !hasOverride &&
+  (!isClosed && openTime === (day.openTime || '08:00') && closeTime === (day.closeTime || '19:00'));
 
   async function handleSave() {
     setSaving(true);
