@@ -132,3 +132,24 @@ export interface OrderSummary {
   status: string;
   items_count: number;
 }
+export interface CalendarOverride {
+  id: number;
+  date: string;
+  is_closed: boolean;
+  open_time: string | null;
+  close_time: string | null;
+  reason: string | null;
+  created_at: string;
+}
+
+export interface DaySchedule {
+  date: string;
+  dayName: string;
+  dayNumber: number;
+  isDefaultClosed: boolean;
+  override: CalendarOverride | null;
+  isClosed: boolean;
+  openTime: string | null;
+  closeTime: string | null;
+  reason: string | null;
+}
