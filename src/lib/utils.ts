@@ -8,9 +8,27 @@ import { fr } from 'date-fns/locale';
  */
 export function calculateEarliestPickupDate(categoryName: string): Date {
   const now = new Date();
-  const noon = setHours(new Date(), 12);
-  const isBeforeNoon = !isAfter(now, noon);
+  let startDate = new Date(now);
+  const currentDay = now.getDay();
   
+  let isBeforeNoon = false;
+  
+  // Si aujourd'hui est dimanche (0) ou lundi (1), partir de mardi à 0h01
+  if (currentDay === 0) {
+    // Dimanche → mardi
+    startDate.setDate(startDate.getDate() + 2);
+    isBeforeNoon = true; // On considère qu'on est mardi 0h01 = avant midi
+  } else if (currentDay === 1) {
+    // Lundi → mardi
+    startDate.setDate(startDate.getDate() + 1);
+    isBeforeNoon = true; // On considère qu'on est mardi 0h01 = avant midi
+  } else {
+    // Jour ouvert, on garde l'heure réelle
+    const noon = setHours(new Date(), 12);
+    isBeforeNoon = !isAfter(now, noon);
+  }
+  
+  // Calculer les jours à ajouter selon la catégorie et l'heure
   let daysToAdd: number;
   
   if (categoryName === 'Pain') {
@@ -19,23 +37,9 @@ export function calculateEarliestPickupDate(categoryName: string): Date {
     daysToAdd = isBeforeNoon ? 1 : 2;
   }
   
-  // Déterminer le point de départ
-  let startDate = new Date(now);
-  const currentDay = startDate.getDay();
-  
-  // Si aujourd'hui est dimanche (0) ou lundi (1), partir de mardi
-  if (currentDay === 0) {
-    // Dimanche → mardi = +2 jours
-    startDate.setDate(startDate.getDate() + 2);
-  } else if (currentDay === 1) {
-    // Lundi → mardi = +1 jour
-    startDate.setDate(startDate.getDate() + 1);
-  }
-  // Sinon on garde aujourd'hui comme point de départ
-  
-  // Le point de départ compte comme jour 0, donc on ajoute (daysToAdd - 1) jours ouvrables
+  // Ajouter les jours ouvrables
   let pickupDate = new Date(startDate);
-  let addedDays = 0; // Le point de départ est le jour 0
+  let addedDays = 0;
   
   while (addedDays < daysToAdd) {
     pickupDate.setDate(pickupDate.getDate() + 1);
@@ -48,7 +52,6 @@ export function calculateEarliestPickupDate(categoryName: string): Date {
   
   return pickupDate;
 }
-
 /**
  * Génère un numéro de commande unique
  * Format: YYYYMMDDLXXX
