@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Category, Product } from '@/types';
+import { Category, Product, CalendarOverride } from '@/types';
 import { formatPrice } from '@/lib/utils';
 
 interface ProductListProps {
@@ -15,11 +15,32 @@ export default function ProductList({ onAddToCart, cart }: ProductListProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [quantities, setQuantities] = useState<Map<number, number>>(new Map());
+  const [calendarOverrides, setCalendarOverrides] = useState<CalendarOverride[]>([]);
+  const [overridesMap, setOverridesMap] = useState<Map<string, CalendarOverride>>(new Map());
 
-  useEffect(() => {
-    fetchCategoriesAndProducts();
-  }, []);
+ useEffect(() => {
+  fetchCategoriesAndProducts();
+  fetchCalendarOverrides();
+}, []);
+async function fetchCalendarOverrides() {
+  try {
+    const { data, error } = await supabase
+      .from('calendar_overrides')
+      .select('*');
 
+    if (error) throw error;
+    
+    setCalendarOverrides(data || []);
+    
+    // Créer une Map pour accès rapide par date
+    const map = new Map(
+      (data || []).map(o => [o.date, o])
+    );
+    setOverridesMap(map);
+  } catch (error) {
+    console.error('Erreur chargement overrides:', error);
+  }
+}
   async function fetchCategoriesAndProducts() {
     try {
       // Récupérer les catégories
