@@ -65,9 +65,7 @@ export default function Cart({ cart, onRemoveFromCart, onUpdateQuantity, onSubmi
         }
       });
       
-      console.log('🛒 Cart: overridesMap size:', overridesMap.size);
-      console.log('🛒 Cart: overridesMap content:', Array.from(overridesMap.entries()));
-      
+    
       const earliestDate = calculateEarliestPickupDate(hasBreads ? 'Pain' : 'Autre', overridesMap);
       setMinPickupDate(earliestDate.toISOString().split('T')[0]);
       
