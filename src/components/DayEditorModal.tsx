@@ -16,13 +16,15 @@ export default function DayEditorModal({ day, onClose, onSave, onDelete }: DayEd
   const [openTime, setOpenTime] = useState(day.openTime || '08:00');
   const [closeTime, setCloseTime] = useState(day.closeTime || '19:00');
   const [reason, setReason] = useState(day.reason || '');
+  const [cutoffDate, setCutoffDate] = useState(day.override?.cutoff_date || '');
   const [saving, setSaving] = useState(false);
 
   const hasOverride = day.override !== null;
   const isDefaultBehavior = 
-  day.isDefaultClosed === isClosed && 
-  !hasOverride &&
-  (!isClosed && openTime === (day.openTime || '08:00') && closeTime === (day.closeTime || '19:00'));
+    day.isDefaultClosed === isClosed && 
+    !hasOverride &&
+    (!isClosed && openTime === (day.openTime || '08:00') && closeTime === (day.closeTime || '19:00')) &&
+    !cutoffDate;
 
   async function handleSave() {
     setSaving(true);
@@ -33,6 +35,7 @@ export default function DayEditorModal({ day, onClose, onSave, onDelete }: DayEd
         open_time: isClosed ? null : openTime,
         close_time: isClosed ? null : closeTime,
         reason: reason.trim() || null,
+        cutoff_date: cutoffDate.trim() || null,
       });
       onClose();
     } catch (error) {
@@ -61,9 +64,9 @@ export default function DayEditorModal({ day, onClose, onSave, onDelete }: DayEd
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+      <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
+        <div className="flex items-center justify-between p-6 border-b sticky top-0 bg-white">
           <div>
             <h2 className="text-xl font-bold text-gray-900 capitalize">
               {day.dayName} {day.dayNumber}
@@ -131,6 +134,33 @@ export default function DayEditorModal({ day, onClose, onSave, onDelete }: DayEd
             </div>
           )}
 
+          {/* Date limite de commande */}
+          {!isClosed && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Date limite de commande (optionnel)
+              </label>
+              <input
+                type="date"
+                value={cutoffDate}
+                onChange={(e) => setCutoffDate(e.target.value)}
+                max={day.date}
+                className="w-full"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                💡 Extension de délai : autorise exceptionnellement les commandes pour ce jour jusqu'à cette date.
+                <br />
+                Exemple : Pour le 24/12 (normalement J+4), définir le cutoff au 21/12 permet de commander jusqu'au 21/12 à 23h59.
+              </p>
+              {cutoffDate && (
+                <p className="text-sm text-green-600 mt-2 font-medium">
+                  ✅ Extension : Les commandes pour le {new Date(day.date + 'T00:00:00').toLocaleDateString('fr-FR')} 
+                  {' '}sont autorisées jusqu'au {new Date(cutoffDate + 'T00:00:00').toLocaleDateString('fr-FR')} à 23h59
+                </p>
+              )}
+            </div>
+          )}
+
           {/* Raison */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -157,7 +187,7 @@ export default function DayEditorModal({ day, onClose, onSave, onDelete }: DayEd
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between p-6 border-t bg-gray-50">
+        <div className="flex items-center justify-between p-6 border-t bg-gray-50 sticky bottom-0">
           <div>
             {hasOverride && (
               <button
