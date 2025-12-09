@@ -139,6 +139,7 @@ export interface CalendarOverride {
   open_time: string | null;
   close_time: string | null;
   reason: string | null;
+  cutoff_date: string | null; // AJOUTER CETTE LIGNE
   created_at: string;
 }
 
