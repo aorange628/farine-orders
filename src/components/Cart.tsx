@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Product } from '@/types';
+import { Product, CalendarOverride } from '@/types';
+import { supabase } from '@/lib/supabase';
 import { formatPrice, calculateEarliestPickupDate, formatDate, isValidPhoneNumber } from '@/lib/utils';
 import { ShoppingCart, Trash2, Calendar, Clock, User, Phone, MessageSquare } from 'lucide-react';
 
@@ -31,19 +32,43 @@ export default function Cart({ cart, onRemoveFromCart, onUpdateQuantity, onSubmi
   const [errors, setErrors] = useState<Partial<Record<keyof OrderFormData, string>>>({});
   const [submitting, setSubmitting] = useState(false);
   const [minPickupDate, setMinPickupDate] = useState<string>('');
+  const [overridesMap, setOverridesMap] = useState<Map<string, CalendarOverride>>(new Map());
+
+  async function fetchCalendarOverrides() {
+    try {
+      const { data, error } = await supabase
+        .from('calendar_overrides')
+        .select('*');
+
+      if (error) throw error;
+      
+      const map = new Map(
+        (data || []).map(o => [o.date, o])
+      );
+      setOverridesMap(map);
+    } catch (error) {
+      console.error('Erreur chargement overrides:', error);
+    }
+  }
+
+  useEffect(() => {
+    fetchCalendarOverrides();
+  }, []);
 
   useEffect(() => {
     // Calculer la date minimum selon la catégorie dominante dans le panier
     if (cart.size > 0) {
       let hasBreads = false;
       cart.forEach(({ product }) => {
-        // Supposons que category_id 1 = Pain (à adapter selon votre BDD)
         if (product.category_id === 1) {
           hasBreads = true;
         }
       });
       
-      const earliestDate = calculateEarliestPickupDate(hasBreads ? 'Pain' : 'Autre');
+      console.log('🛒 Cart: overridesMap size:', overridesMap.size);
+      console.log('🛒 Cart: overridesMap content:', Array.from(overridesMap.entries()));
+      
+      const earliestDate = calculateEarliestPickupDate(hasBreads ? 'Pain' : 'Autre', overridesMap);
       setMinPickupDate(earliestDate.toISOString().split('T')[0]);
       
       // Initialiser la date du formulaire si vide
@@ -54,7 +79,7 @@ export default function Cart({ cart, onRemoveFromCart, onUpdateQuantity, onSubmi
         }));
       }
     }
-  }, [cart]);
+  }, [cart, overridesMap]);
 
   const cartItems = Array.from(cart.values());
   const total = cartItems.reduce(
