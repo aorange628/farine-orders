@@ -50,10 +50,14 @@ export function isDateSelectableForPickup(
   const dateString = format(date, 'yyyy-MM-dd');
   const override = overrides.get(dateString);
   
+  console.log('🔍 Checking date:', dateString, 'Override:', override);
+  
   // Si la date a un cutoff_date, c'est une extension de délai
   if (override && override.cutoff_date) {
     const cutoffDate = new Date(override.cutoff_date + 'T23:59:59');
     const now = new Date();
+    
+    console.log('✅ Has cutoff!', 'now:', now, 'cutoff:', cutoffDate, 'valid?', now <= cutoffDate);
     
     // On peut commander pour ce jour SI on est encore avant le cutoff
     if (now <= cutoffDate) {
@@ -63,10 +67,11 @@ export function isDateSelectableForPickup(
     }
   }
   
+  console.log('📅 No cutoff, comparing:', dateString, '>=', format(baseMinDate, 'yyyy-MM-dd'), '=', date >= baseMinDate);
+  
   // Pas de cutoff, utiliser les règles normales
   return date >= baseMinDate;
 }
-
 /**
  * Calcule la date d'enlèvement la plus proche selon les règles métier
  * VERSION AVEC EXTENSIONS DE DÉLAI (cutoff_date)
