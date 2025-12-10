@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { generateOrderNumber, calculateOrderTotal } from '@/lib/utils';
+import { generateOrderNumber, calculateOrderTotal, parseOrderIncrement } from '@/lib/utils';
+import { format } from 'date-fns';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -37,22 +38,51 @@ export async function POST(request: NextRequest) {
     // Calculer le total
     const total_ttc = calculateOrderTotal(items);
 
-    // Obtenir l'incrément quotidien
-    const created_date = new Date().toISOString().split('T')[0];
+    // Obtenir l'incrément quotidien pour cette initiale
+    const now = new Date();
+    const created_date = format(now, 'yyyy-MM-dd');
+    const day = format(now, 'dd');
+    const month = format(now, 'MM');
+    const year = format(now, 'yy');
+    const firstLetter = customer_name.charAt(0).toUpperCase();
     
+    // Construire le préfixe de recherche (JJMMAALL)
+    const prefix = `${day}${month}${year}${firstLetter}`;
+    
+    // Chercher toutes les commandes du jour avec cette initiale
     const { data: existingOrders } = await supabase
       .from('orders')
       .select('order_number')
       .eq('created_date', created_date)
-      .order('created_at', { ascending: false })
-      .limit(1);
+      .like('order_number', `${prefix}%`)
+      .order('created_at', { ascending: false });
 
     let dailyIncrement = 1;
+    
     if (existingOrders && existingOrders.length > 0) {
-      // Extraire l'incrément du dernier numéro de commande
-      const lastOrderNumber = existingOrders[0].order_number;
-      const lastIncrement = parseInt(lastOrderNumber.slice(-3));
-      dailyIncrement = lastIncrement + 1;
+      // Trouver le max des incréments en base 36
+      let maxIncrement = 0;
+      
+      existingOrders.forEach((order) => {
+        try {
+          const increment = parseOrderIncrement(order.order_number);
+          if (increment > maxIncrement) {
+            maxIncrement = increment;
+          }
+        } catch (e) {
+          console.error('Erreur parsing numéro:', order.order_number, e);
+        }
+      });
+      
+      dailyIncrement = maxIncrement + 1;
+    }
+
+    // Vérifier qu'on ne dépasse pas la limite
+    if (dailyIncrement > 1295) {
+      return NextResponse.json(
+        { error: 'Limite de commandes quotidienne atteinte pour cette initiale (1295 max)' },
+        { status: 400 }
+      );
     }
 
     // Générer le numéro de commande
