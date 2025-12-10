@@ -461,7 +461,26 @@ export default function OrdersPage() {
     const fileName = `commandes_${new Date().toISOString().split('T')[0]}.pdf`;
     pdf.save(fileName);
   }
+// === METTRE À JOUR LE STATUT DES COMMANDES EN "Imprimé" ===
+  try {
+    const { error } = await supabase
+      .from('orders')
+      .update({ status: 'Imprimé' })
+      .in('id', orderIds);
 
+    if (error) {
+      console.error('Erreur lors de la mise à jour du statut:', error);
+      alert('PDF généré mais erreur lors de la mise à jour du statut');
+    } else {
+      // Rafraîchir la liste des commandes pour voir le changement
+      await fetchOrders();
+      alert(`PDF généré ! ${orderIds.length} commande(s) passée(s) en statut "Imprimé"`);
+    }
+  } catch (error) {
+    console.error('Erreur:', error);
+    alert('PDF généré mais erreur lors de la mise à jour du statut');
+  }
+}
   const filteredOrders = orders;
   const allSelected = selectedOrders.size === orders.length && orders.length > 0;
 
