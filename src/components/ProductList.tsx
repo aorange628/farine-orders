@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Category, Product, CalendarOverride } from '@/types';
 import { formatPrice } from '@/lib/utils';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 
 interface ProductListProps {
   onAddToCart: (product: Product, quantity: number) => void;
@@ -17,30 +18,35 @@ export default function ProductList({ onAddToCart, cart }: ProductListProps) {
   const [quantities, setQuantities] = useState<Map<number, number>>(new Map());
   const [calendarOverrides, setCalendarOverrides] = useState<CalendarOverride[]>([]);
   const [overridesMap, setOverridesMap] = useState<Map<string, CalendarOverride>>(new Map());
+  
+  // État pour gérer les catégories ouvertes/fermées
+  const [expandedCategories, setExpandedCategories] = useState<Set<number>>(new Set());
 
- useEffect(() => {
-  fetchCategoriesAndProducts();
-  fetchCalendarOverrides();
-}, []);
-async function fetchCalendarOverrides() {
-  try {
-    const { data, error } = await supabase
-      .from('calendar_overrides')
-      .select('*');
+  useEffect(() => {
+    fetchCategoriesAndProducts();
+    fetchCalendarOverrides();
+  }, []);
 
-    if (error) throw error;
-    
-    setCalendarOverrides(data || []);
-    
-    // Créer une Map pour accès rapide par date
-    const map = new Map(
-      (data || []).map(o => [o.date, o])
-    );
-    setOverridesMap(map);
-  } catch (error) {
-    console.error('Erreur chargement overrides:', error);
+  async function fetchCalendarOverrides() {
+    try {
+      const { data, error } = await supabase
+        .from('calendar_overrides')
+        .select('*');
+
+      if (error) throw error;
+      
+      setCalendarOverrides(data || []);
+      
+      // Créer une Map pour accès rapide par date
+      const map = new Map(
+        (data || []).map(o => [o.date, o])
+      );
+      setOverridesMap(map);
+    } catch (error) {
+      console.error('Erreur chargement overrides:', error);
+    }
   }
-}
+
   async function fetchCategoriesAndProducts() {
     try {
       // Récupérer les catégories
@@ -76,6 +82,18 @@ async function fetchCalendarOverrides() {
     }
   }
 
+  function toggleCategory(categoryId: number) {
+    setExpandedCategories(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(categoryId)) {
+        newSet.delete(categoryId);
+      } else {
+        newSet.add(categoryId);
+      }
+      return newSet;
+    });
+  }
+
   function handleAddToCart(product: Product) {
     const quantity = quantities.get(product.id) || 0;
     if (quantity > 0) {
@@ -98,7 +116,7 @@ async function fetchCalendarOverrides() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4">
       {categories.map(category => {
         const categoryProducts = products.filter(
           p => p.category_id === category.id
@@ -106,82 +124,106 @@ async function fetchCalendarOverrides() {
 
         if (categoryProducts.length === 0) return null;
 
+        const isExpanded = expandedCategories.has(category.id);
+
         return (
-          <div key={category.id} className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-2xl font-bold text-farine-green mb-6 border-b-2 border-farine-green pb-2">
-              {category.name}
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {categoryProducts.map(product => {
-                const quantity = quantities.get(product.id) || 0;
-                const inCart = cart.has(product.id);
+          <div key={category.id} className="bg-white rounded-lg shadow-md overflow-hidden">
+            {/* En-tête de catégorie - cliquable */}
+            <button
+              onClick={() => toggleCategory(category.id)}
+              className="w-full flex items-center justify-between p-5 bg-farine-beige hover:bg-farine-green-light transition-colors group"
+            >
+              <div className="flex items-center gap-3">
+                {isExpanded ? (
+                  <ChevronDown className="w-6 h-6 text-farine-green transition-transform" />
+                ) : (
+                  <ChevronRight className="w-6 h-6 text-farine-green transition-transform" />
+                )}
+                <h2 className="text-2xl font-bold text-farine-green">
+                  {category.name}
+                </h2>
+                <span className="text-sm text-gray-600 bg-white px-3 py-1 rounded-full">
+                  {categoryProducts.length} produit{categoryProducts.length > 1 ? 's' : ''}
+                </span>
+              </div>
+            </button>
 
-                return (
-                  <div
-                    key={product.id}
-                    className={`border rounded-lg p-4 transition-all ${
-                      inCart
-                        ? 'border-farine-green bg-farine-beige'
-                        : 'border-gray-200 hover:border-farine-green hover:shadow-md'
-                    }`}
-                  >
-                    {/* Nom du produit */}
-                    <h3 className="font-bold text-lg text-gray-800 mb-2">
-                      {product.name}
-                    </h3>
+            {/* Liste des produits - affichée seulement si la catégorie est ouverte */}
+            {isExpanded && (
+              <div className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {categoryProducts.map(product => {
+                    const quantity = quantities.get(product.id) || 0;
+                    const inCart = cart.has(product.id);
 
-                    {/* Description si présente */}
-                    {product.description && (
-                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                        {product.description}
-                      </p>
-                    )}
-
-                    {/* Prix et unité */}
-                    <div className="flex items-center justify-between mb-4">
-                      <span className="text-2xl font-bold text-farine-green">
-                        {formatPrice(product.price_ttc)}
-                      </span>
-                      <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                        {product.unit === 'kg' ? 'au kg' : 'l\'unité'}
-                      </span>
-                    </div>
-
-                    {/* Contrôles quantité */}
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="number"
-                        min="0"
-                        step={product.unit === 'kg' ? '0.1' : '1'}
-                        value={quantity === 0 ? '' : quantity}
-                        onChange={(e) => {
-                          const value = parseFloat(e.target.value) || 0;
-                          setQuantities(prev => {
-                            const newQuantities = new Map(prev);
-                            newQuantities.set(product.id, Math.max(0, value));
-                            return newQuantities;
-                          });
-                        }}
-                        className="w-28 px-3 py-2 text-center border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-farine-green"
-                      />
-                      <button
-                        onClick={() => handleAddToCart(product)}
-                        disabled={quantity === 0}
-                        className="flex-1 btn-primary text-sm py-2"
+                    return (
+                      <div
+                        key={product.id}
+                        className={`border rounded-lg p-4 transition-all ${
+                          inCart
+                            ? 'border-farine-green bg-farine-beige'
+                            : 'border-gray-200 hover:border-farine-green hover:shadow-md'
+                        }`}
                       >
-                        {inCart ? 'Modifier' : 'Ajouter'}
-                      </button>
-                    </div>
-                    
-                    {inCart && (
-                      <div className="mt-2 text-sm text-farine-green font-medium text-center">
-                        ✓ Dans le panier: {cart.get(product.id)?.quantity} {product.unit === 'kg' ? 'kg' : 'unité(s)'}
+                        {/* Nom du produit */}
+                        <h3 className="font-bold text-lg text-gray-800 mb-2">
+                          {product.name}
+                        </h3>
+
+                        {/* Description si présente */}
+                        {product.description && (
+                          <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                            {product.description}
+                          </p>
+                        )}
+
+                        {/* Prix et unité */}
+                        <div className="flex items-center justify-between mb-4">
+                          <span className="text-2xl font-bold text-farine-green">
+                            {formatPrice(product.price_ttc)}
+                          </span>
+                          <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                            {product.unit === 'kg' ? 'au kg' : 'l\'unité'}
+                          </span>
+                        </div>
+
+                        {/* Contrôles quantité */}
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="number"
+                            min="0"
+                            step={product.unit === 'kg' ? '0.1' : '1'}
+                            value={quantity === 0 ? '' : quantity}
+                            onChange={(e) => {
+                              const value = parseFloat(e.target.value) || 0;
+                              setQuantities(prev => {
+                                const newQuantities = new Map(prev);
+                                newQuantities.set(product.id, Math.max(0, value));
+                                return newQuantities;
+                              });
+                            }}
+                            className="w-28 px-3 py-2 text-center border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-farine-green"
+                          />
+                          <button
+                            onClick={() => handleAddToCart(product)}
+                            disabled={quantity === 0}
+                            className="flex-1 btn-primary text-sm py-2"
+                          >
+                            {inCart ? 'Modifier' : 'Ajouter'}
+                          </button>
+                        </div>
+                        
+                        {inCart && (
+                          <div className="mt-2 text-sm text-farine-green font-medium text-center">
+                            ✓ Dans le panier: {cart.get(product.id)?.quantity} {product.unit === 'kg' ? 'kg' : 'unité(s)'}
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         );
       })}
