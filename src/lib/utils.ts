@@ -219,16 +219,37 @@ export function getMonday(date: Date): Date {
 }
 
 /**
+ * Convertit un nombre en base 36 (0-9, A-Z)
+ * @param num - Nombre à convertir (1-1295)
+ * @returns Chaîne en base 36 sur 2 caractères
+ * 
+ * Exemples:
+ * - 1 → "01"
+ * - 10 → "0A"
+ * - 35 → "0Z"
+ * - 36 → "10"
+ * - 1295 → "ZZ"
+ */
+function toBase36(num: number): string {
+  return num.toString(36).toUpperCase().padStart(2, '0');
+}
+
+/**
  * Génère un numéro de commande unique
- * Format: YYYYMMDDLXXX
- * - YYYY: année
- * - MM: mois
- * - DD: jour
+ * Format: JJMMAALXX
+ * - JJ: jour (2 chiffres)
+ * - MM: mois (2 chiffres)
+ * - AA: année (2 derniers chiffres)
  * - L: première lettre du nom du client
- * - XXX: incrément sur 3 chiffres (001, 002, etc.)
+ * - XX: incrément en base 36 (00-ZZ = 1296 possibilités)
+ * 
+ * Exemples:
+ * - 101225R01 : 1ère commande du 10/12/2025 pour un nom en R
+ * - 101225R0A : 10ème commande du 10/12/2025 pour un nom en R
+ * - 101225RZZ : 1295ème commande du 10/12/2025 pour un nom en R
  * 
  * @param customerName - Nom du client
- * @param dailyIncrement - Numéro d'ordre du jour
+ * @param dailyIncrement - Numéro d'ordre du jour (1-1295)
  * @returns Numéro de commande formaté
  */
 export function generateOrderNumber(
@@ -236,13 +257,34 @@ export function generateOrderNumber(
   dailyIncrement: number
 ): string {
   const now = new Date();
-  const year = format(now, 'yyyy');
-  const month = format(now, 'MM');
   const day = format(now, 'dd');
+  const month = format(now, 'MM');
+  const year = format(now, 'yy'); // 2 chiffres seulement
   const firstLetter = customerName.charAt(0).toUpperCase();
-  const increment = dailyIncrement.toString().padStart(3, '0');
+  const increment = toBase36(dailyIncrement);
   
-  return `${year}${month}${day}${firstLetter}${increment}`;
+  // Vérification sécurité : max 1295 (ZZ en base 36)
+  if (dailyIncrement > 1295) {
+    throw new Error(`Limite de commandes atteinte pour aujourd'hui (max: 1295)`);
+  }
+  
+  return `${day}${month}${year}${firstLetter}${increment}`;
+}
+
+/**
+ * Extrait l'incrément d'un numéro de commande en base 36
+ * @param orderNumber - Numéro de commande (ex: "101225R0A")
+ * @returns Incrément décimal (ex: 10)
+ * 
+ * Exemples:
+ * - "101225R01" → 1
+ * - "101225R0A" → 10
+ * - "101225RZZ" → 1295
+ */
+export function parseOrderIncrement(orderNumber: string): number {
+  // Les 2 derniers caractères sont l'incrément en base 36
+  const incrementStr = orderNumber.slice(-2);
+  return parseInt(incrementStr, 36);
 }
 
 /**
