@@ -203,7 +203,30 @@ export default function OrdersPage() {
     }
 
     const selectedOrdersList = orders.filter(o => selectedOrders.has(o.id));
-    const orderIds = selectedOrdersList.map(o => o.id);
+    
+    // FILTRER LES COMMANDES : EXCLURE "Annulé" ET "En suspens"
+    const validOrdersList = selectedOrdersList.filter(
+      order => order.status !== 'Annulé' && order.status !== 'En suspens'
+    );
+    const excludedOrdersList = selectedOrdersList.filter(
+      order => order.status === 'Annulé' || order.status === 'En suspens'
+    );
+
+    // Si aucune commande valide
+    if (validOrdersList.length === 0) {
+      alert('Aucune commande valide à imprimer. Les commandes "Annulé" et "En suspens" sont exclues automatiquement.');
+      return;
+    }
+
+    // Informer l'utilisateur si des commandes ont été exclues
+    if (excludedOrdersList.length > 0) {
+      const confirmMsg = `${excludedOrdersList.length} commande(s) avec statut "Annulé" ou "En suspens" ont été exclues automatiquement.\n\n${validOrdersList.length} commande(s) valide(s) vont être imprimées.\n\nContinuer ?`;
+      if (!confirm(confirmMsg)) {
+        return;
+      }
+    }
+
+    const orderIds = validOrdersList.map(o => o.id);
 
     // Récupérer les détails complets avec les produits pour avoir l'unité
     const { data: ordersWithItems } = await supabase
@@ -461,7 +484,7 @@ export default function OrdersPage() {
     const fileName = `commandes_${new Date().toISOString().split('T')[0]}.pdf`;
     pdf.save(fileName);
 
-    // === METTRE À JOUR LE STATUT DES COMMANDES EN "Imprimé" ===
+    // === METTRE À JOUR LE STATUT DES COMMANDES VALIDES EN "Imprimé" ===
     try {
       const { error } = await supabase
         .from('orders')
@@ -474,7 +497,11 @@ export default function OrdersPage() {
       } else {
         // Rafraîchir la liste des commandes pour voir le changement
         await fetchOrders();
-        alert(`PDF généré ! ${orderIds.length} commande(s) passée(s) en statut "Imprimé"`);
+        let message = `PDF généré ! ${orderIds.length} commande(s) passée(s) en statut "Imprimé"`;
+        if (excludedOrdersList.length > 0) {
+          message += `\n\n${excludedOrdersList.length} commande(s) exclue(s) (Annulé/En suspens)`;
+        }
+        alert(message);
       }
     } catch (error) {
       console.error('Erreur:', error);
