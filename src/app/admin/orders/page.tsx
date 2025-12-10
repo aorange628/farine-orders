@@ -317,4 +317,405 @@ export default function OrdersPage() {
 
       // En-tête du tableau : Qté | Unité | Produit | P.U. | Total
       pdf.setFillColor(240, 240, 240);
-      pdf.rect(margin, yPos, contentWi
+      pdf.rect(margin, yPos, contentWidth, 7, 'F');
+      
+      pdf.setFontSize(8);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Qté', margin + 5, yPos + 4.5, { align: 'center' });
+      pdf.text('Unité', margin + 20, yPos + 4.5, { align: 'center' });
+      pdf.text('Produit', margin + 40, yPos + 4.5);
+      pdf.text('P.U.', margin + 145, yPos + 4.5);
+      pdf.text('Total', margin + 175, yPos + 4.5);
+      
+      yPos += 7;
+
+      // Lignes du tableau
+      pdf.setFont('helvetica', 'normal');
+      (order.order_items || []).forEach((item: any, index: number) => {
+        // Ligne alternée
+        if (index % 2 === 0) {
+          pdf.setFillColor(250, 250, 250);
+          pdf.rect(margin, yPos, contentWidth, 5, 'F');
+        }
+
+        pdf.setFontSize(8);
+        
+        // Quantité (centrée)
+        pdf.text(item.quantity.toString(), margin + 5, yPos + 3.5, { align: 'center' });
+        
+        // Unité (centrée)
+        const unit = item.product?.unit || 'unité';
+        pdf.text(unit, margin + 20, yPos + 3.5, { align: 'center' });
+        
+        // Produit (tronqué si trop long)
+        let productName = item.product_name;
+        const maxProductNameWidth = 95;
+        if (pdf.getTextWidth(productName) > maxProductNameWidth) {
+          while (pdf.getTextWidth(productName + '...') > maxProductNameWidth && productName.length > 0) {
+            productName = productName.slice(0, -1);
+          }
+          productName += '...';
+        }
+        pdf.text(productName, margin + 40, yPos + 3.5);
+        
+        // Prix unitaire
+        pdf.text(`${item.unit_price_ttc.toFixed(2)} €`, margin + 145, yPos + 3.5);
+        
+        // Total
+        pdf.text(`${item.subtotal_ttc.toFixed(2)} €`, margin + 175, yPos + 3.5);
+        
+        yPos += 5;
+      });
+
+      // Ligne de séparation
+      pdf.setDrawColor(200, 200, 200);
+      pdf.line(margin, yPos, pageWidth - margin, yPos);
+      yPos += 5;
+
+      // === TOTAL (NOIR/GRAS SUR FOND BLANC) ===
+      pdf.setDrawColor(51, 51, 51);
+      pdf.setLineWidth(0.5);
+      pdf.line(margin, yPos, pageWidth - margin, yPos);
+      yPos += 1;
+      pdf.line(margin, yPos + 7, pageWidth - margin, yPos + 7);
+      
+      pdf.setTextColor(0, 0, 0);
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(`TOTAL TTC : ${order.total_ttc.toFixed(2)} €`, pageWidth - margin - 3, yPos + 5, { align: 'right' });
+      
+      yPos += 10;
+
+      // === STATUT ===
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(`STATUT : `, margin, yPos);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(order.status, margin + 17, yPos);
+      yPos += 6;
+
+      // === COMMENTAIRES ===
+      if (order.customer_comment) {
+        pdf.setFontSize(9);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('COMMENTAIRE CLIENT :', margin, yPos);
+        yPos += 4;
+        
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(8);
+        const commentLines = pdf.splitTextToSize(order.customer_comment, contentWidth - 6);
+        pdf.text(commentLines, margin + 3, yPos);
+        yPos += (commentLines.length * 3.5) + 3;
+      }
+
+      if (order.farine_comment) {
+        pdf.setFontSize(9);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('NOTES FARINE :', margin, yPos);
+        yPos += 4;
+        
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(8);
+        const commentLines = pdf.splitTextToSize(order.farine_comment, contentWidth - 6);
+        pdf.text(commentLines, margin + 3, yPos);
+        yPos += (commentLines.length * 3.5) + 3;
+      }
+
+      // Espace pour notes manuscrites si on a de la place
+      if (yPos < pageHeight - 35) {
+        yPos += 3;
+        pdf.setFontSize(9);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('NOTES :', margin, yPos);
+        yPos += 4;
+        
+        // Lignes pour écriture
+        pdf.setDrawColor(220, 220, 220);
+        pdf.setLineWidth(0.1);
+        for (let i = 0; i < 3; i++) {
+          if (yPos + (i * 6) < pageHeight - 15) {
+            pdf.line(margin, yPos + (i * 6), pageWidth - margin, yPos + (i * 6));
+          }
+        }
+      }
+
+      // === NUMÉRO DE PAGE EN BAS ===
+      pdf.setFontSize(8);
+      pdf.setTextColor(128, 128, 128);
+      pdf.text(
+        `Page ${currentPage} / ${totalPages}`,
+        pageWidth / 2,
+        pageHeight - 8,
+        { align: 'center' }
+      );
+
+      // Date d'impression
+      pdf.text(
+        `Imprimé le ${new Date().toLocaleString('fr-FR')}`,
+        margin,
+        pageHeight - 8
+      );
+    });
+
+    // Télécharger le PDF
+    const fileName = `commandes_${new Date().toISOString().split('T')[0]}.pdf`;
+    pdf.save(fileName);
+
+    // === METTRE À JOUR LE STATUT DES COMMANDES EN "Imprimé" ===
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ status: 'Imprimé' })
+        .in('id', orderIds);
+
+      if (error) {
+        console.error('Erreur lors de la mise à jour du statut:', error);
+        alert('PDF généré mais erreur lors de la mise à jour du statut');
+      } else {
+        // Rafraîchir la liste des commandes pour voir le changement
+        await fetchOrders();
+        alert(`PDF généré ! ${orderIds.length} commande(s) passée(s) en statut "Imprimé"`);
+      }
+    } catch (error) {
+      console.error('Erreur:', error);
+      alert('PDF généré mais erreur lors de la mise à jour du statut');
+    }
+  }
+
+  const filteredOrders = orders;
+  const allSelected = selectedOrders.size === orders.length && orders.length > 0;
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-farine-green"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Commandes</h1>
+          <p className="text-gray-600 mt-2">
+            {orders.length} commande{orders.length > 1 ? 's' : ''} au total
+          </p>
+        </div>
+        <button
+          onClick={fetchOrders}
+          className="btn-secondary flex items-center gap-2"
+        >
+          <RefreshCw className="w-5 h-5" />
+          Actualiser
+        </button>
+      </div>
+
+      {/* Filtres */}
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Filter className="w-5 h-5 text-farine-green" />
+          <h2 className="text-lg font-bold text-gray-900">Filtres</h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Recherche (nom ou n°)
+            </label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                value={filters.search}
+                onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+                placeholder="Nom ou numéro..."
+                className="pl-10"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Statut
+            </label>
+            <select
+              value={filters.status}
+              onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+            >
+              <option value="">Tous les statuts</option>
+              {statuses.map(status => (
+                <option key={status.id} value={status.name}>{status.name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Date d'enlèvement
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                type="date"
+                value={filters.pickupDateFrom}
+                onChange={(e) => setFilters({ ...filters, pickupDateFrom: e.target.value })}
+                placeholder="Du"
+              />
+              <input
+                type="date"
+                value={filters.pickupDateTo}
+                onChange={(e) => setFilters({ ...filters, pickupDateTo: e.target.value })}
+                placeholder="Au"
+              />
+            </div>
+          </div>
+        </div>
+        <div className="flex gap-2 mt-4">
+          <button onClick={fetchOrders} className="btn-primary">
+            Appliquer les filtres
+          </button>
+          <button
+            onClick={() => {
+              setFilters({
+                search: '',
+                status: '',
+                pickupDateFrom: '',
+                pickupDateTo: '',
+                createdDateFrom: '',
+                createdDateTo: '',
+              });
+              fetchOrders();
+            }}
+            className="btn-secondary"
+          >
+            Réinitialiser
+          </button>
+        </div>
+      </div>
+
+      {/* Actions de masse */}
+      {selectedOrders.size > 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <p className="text-sm font-medium text-blue-900 mb-3">
+            {selectedOrders.size} commande{selectedOrders.size > 1 ? 's' : ''} sélectionnée{selectedOrders.size > 1 ? 's' : ''}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={exportOrdersToExcel}
+              className="btn-primary text-sm flex items-center gap-2"
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              Export Excel (liste)
+            </button>
+            <button
+              onClick={exportOrderItemsToExcel}
+              className="btn-primary text-sm flex items-center gap-2"
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              Export Excel (lignes)
+            </button>
+            <button
+              onClick={exportProductionReport}
+              className="btn-primary text-sm flex items-center gap-2"
+            >
+              <Download className="w-4 h-4" />
+              Rapport production
+            </button>
+            <button
+              onClick={exportOrdersToPDF}
+              className="btn-primary text-sm flex items-center gap-2"
+            >
+              <Printer className="w-4 h-4" />
+              Imprimer PDF
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Table des commandes */}
+      <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-farine-beige">
+              <tr>
+                <th className="px-4 py-3 text-left">
+                  <button
+                    onClick={toggleSelectAll}
+                    className="p-1 hover:bg-farine-green-light rounded"
+                  >
+                    {allSelected ? (
+                      <CheckSquare className="w-5 h-5 text-farine-green" />
+                    ) : (
+                      <Square className="w-5 h-5 text-gray-400" />
+                    )}
+                  </button>
+                </th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">N° Commande</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Client</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Date enlèvement</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Montant</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Statut</th>
+                <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {filteredOrders.map(order => {
+                const status = statuses.find(s => s.name === order.status);
+                const isSelected = selectedOrders.has(order.id);
+                
+                return (
+                  <tr key={order.id} className={`hover:bg-farine-beige transition-colors ${isSelected ? 'bg-blue-50' : ''}`}>
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={() => toggleSelectOrder(order.id)}
+                        className="p-1 hover:bg-gray-100 rounded"
+                      >
+                        {isSelected ? (
+                          <CheckSquare className="w-5 h-5 text-farine-green" />
+                        ) : (
+                          <Square className="w-5 h-5 text-gray-400" />
+                        )}
+                      </button>
+                    </td>
+                    <td className="px-4 py-3 text-sm font-mono">{order.order_number}</td>
+                    <td className="px-4 py-3 text-sm">{order.customer_name}</td>
+                    <td className="px-4 py-3 text-sm">
+                      {new Date(order.pickup_date).toLocaleDateString('fr-FR')} à {order.pickup_time}
+                    </td>
+                    <td className="px-4 py-3 text-sm font-semibold">{formatPrice(order.total_ttc)}</td>
+                    <td className="px-4 py-3">
+                      {status && (
+                        <span
+                          className="inline-block px-3 py-1 text-xs font-medium rounded-full"
+                          style={{
+                            backgroundColor: status.color + '33',
+                            color: status.color,
+                          }}
+                        >
+                          {order.status}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <Link
+                        href={`/admin/orders/${order.id}`}
+                        className="inline-flex items-center gap-1 text-farine-green hover:text-farine-green-dark"
+                      >
+                        <Eye className="w-4 h-4" />
+                        Voir
+                      </Link>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {filteredOrders.length === 0 && (
+        <div className="text-center py-12 bg-white rounded-lg shadow-md">
+          <p className="text-gray-500 text-lg">Aucune commande trouvée</p>
+        </div>
+      )}
+    </div>
+  );
+}
