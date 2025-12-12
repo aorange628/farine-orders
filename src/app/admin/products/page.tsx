@@ -18,6 +18,8 @@ export default function ProductsPage() {
     unit: 'unité' as 'unité' | 'kg',
     price_ttc: '',
     description: '',
+    libelle_drive: '',
+    libelle_caisse: '',
   });
 
   useEffect(() => {
@@ -61,6 +63,8 @@ export default function ProductsPage() {
       unit: 'unité',
       price_ttc: '',
       description: '',
+      libelle_drive: '',
+      libelle_caisse: '',
     });
     setShowModal(true);
   }
@@ -73,6 +77,8 @@ export default function ProductsPage() {
       unit: product.unit,
       price_ttc: product.price_ttc.toString(),
       description: product.description || '',
+      libelle_drive: (product as any).libelle_drive || '',
+      libelle_caisse: (product as any).libelle_caisse || '',
     });
     setShowModal(true);
   }
@@ -86,6 +92,8 @@ export default function ProductsPage() {
       unit: formData.unit,
       price_ttc: parseFloat(formData.price_ttc),
       description: formData.description || null,
+      libelle_drive: formData.libelle_drive || null,
+      libelle_caisse: formData.libelle_caisse || null,
     };
 
     try {
@@ -190,6 +198,8 @@ export default function ProductsPage() {
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Nom</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Prix TTC</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Unité</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Libellé Drive</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Libellé Caisse</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Statut</th>
                     <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">Actions</th>
                   </tr>
@@ -209,6 +219,12 @@ export default function ProductsPage() {
                       </td>
                       <td className="px-4 py-3 font-semibold">{formatPrice(product.price_ttc)}</td>
                       <td className="px-4 py-3 text-sm">{product.unit}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        {(product as any).libelle_drive || '-'}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        {(product as any).libelle_caisse || '-'}
+                      </td>
                       <td className="px-4 py-3">
                         <button
                           onClick={() => toggleActive(product)}
@@ -273,7 +289,7 @@ export default function ProductsPage() {
       {/* Modal de création/édition */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-2xl max-w-2xl w-full p-8">
+          <div className="bg-white rounded-lg shadow-2xl max-w-2xl w-full p-8 max-h-[90vh] overflow-y-auto">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">
               {editingProduct ? 'Modifier le produit' : 'Nouveau produit'}
             </h2>
@@ -340,6 +356,38 @@ export default function ProductsPage() {
                     <option value="unité">unité</option>
                     <option value="kg">kg</option>
                   </select>
+                </div>
+              </div>
+
+              {/* Libellé Drive et Libellé Caisse */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Libellé Drive
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.libelle_drive}
+                    onChange={(e) => setFormData({ ...formData, libelle_drive: e.target.value })}
+                    placeholder="Ex: Campagne nature - Miches"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Nom affiché dans le système Drive
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Libellé Caisse
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.libelle_caisse}
+                    onChange={(e) => setFormData({ ...formData, libelle_caisse: e.target.value })}
+                    placeholder="Ex: Campagne"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Nom affiché sur la caisse
+                  </p>
                 </div>
               </div>
 
