@@ -13,7 +13,8 @@ import {
   RefreshCw,
   Download,
   CheckSquare,
-  Square
+  Square,
+  Edit3
 } from 'lucide-react';
 import Link from 'next/link';
 import * as XLSX from 'xlsx';
@@ -24,6 +25,8 @@ export default function OrdersPage() {
   const [statuses, setStatuses] = useState<OrderStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrders, setSelectedOrders] = useState<Set<number>>(new Set());
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [selectedNewStatus, setSelectedNewStatus] = useState('');
   
   // Filtres
   const [filters, setFilters] = useState({
@@ -107,6 +110,48 @@ export default function OrdersPage() {
       setSelectedOrders(new Set());
     } else {
       setSelectedOrders(new Set(orders.map(o => o.id)));
+    }
+  }
+
+  function openStatusChangeModal() {
+    if (selectedOrders.size === 0) {
+      alert('Veuillez sélectionner au moins une commande');
+      return;
+    }
+    setSelectedNewStatus(statuses[0]?.name || '');
+    setShowStatusModal(true);
+  }
+
+  async function applyStatusChange() {
+    if (!selectedNewStatus) {
+      alert('Veuillez sélectionner un statut');
+      return;
+    }
+
+    const selectedOrdersList = orders.filter(o => selectedOrders.has(o.id));
+    
+    const confirmMsg = `Êtes-vous sûr de vouloir changer le statut de ${selectedOrdersList.length} commande(s) vers "${selectedNewStatus}" ?\n\nCommandes concernées :\n${selectedOrdersList.map(o => `- ${o.order_number} (${o.customer_name})`).slice(0, 10).join('\n')}${selectedOrdersList.length > 10 ? '\n...' : ''}`;
+    
+    if (!confirm(confirmMsg)) {
+      return;
+    }
+
+    try {
+      const orderIds = Array.from(selectedOrders);
+      
+      const { error } = await supabase
+        .from('orders')
+        .update({ status: selectedNewStatus })
+        .in('id', orderIds);
+
+      if (error) throw error;
+
+      setShowStatusModal(false);
+      await fetchOrders();
+      alert(`✅ Statut de ${orderIds.length} commande(s) changé vers "${selectedNewStatus}"`);
+    } catch (error) {
+      console.error('Erreur changement statut:', error);
+      alert('❌ Erreur lors du changement de statut');
     }
   }
 
@@ -635,6 +680,13 @@ export default function OrdersPage() {
           </p>
           <div className="flex flex-wrap gap-2">
             <button
+              onClick={openStatusChangeModal}
+              className="btn-primary text-sm flex items-center gap-2 bg-orange-600 hover:bg-orange-700"
+            >
+              <Edit3 className="w-4 h-4" />
+              Changer le statut
+            </button>
+            <button
               onClick={exportOrdersToExcel}
               className="btn-primary text-sm flex items-center gap-2"
             >
@@ -750,6 +802,55 @@ export default function OrdersPage() {
       {filteredOrders.length === 0 && (
         <div className="text-center py-12 bg-white rounded-lg shadow-md">
           <p className="text-gray-500 text-lg">Aucune commande trouvée</p>
+        </div>
+      )}
+
+      {/* Modal de changement de statut */}
+      {showStatusModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-2xl max-w-md w-full p-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              Changer le statut
+            </h2>
+            
+            <p className="text-gray-600 mb-4">
+              {selectedOrders.size} commande{selectedOrders.size > 1 ? 's' : ''} sélectionnée{selectedOrders.size > 1 ? 's' : ''}
+            </p>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Nouveau statut <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={selectedNewStatus}
+                onChange={(e) => setSelectedNewStatus(e.target.value)}
+                className="w-full"
+                required
+              >
+                {statuses.map(status => (
+                  <option key={status.id} value={status.name}>
+                    {status.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowStatusModal(false)}
+                className="flex-1 btn-secondary"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={applyStatusChange}
+                className="flex-1 btn-primary bg-orange-600 hover:bg-orange-700"
+              >
+                Appliquer
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
