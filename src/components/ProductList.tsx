@@ -249,7 +249,6 @@ export default function ProductList({ onAddToCart, cart }: ProductListProps) {
                                 return newQuantities;
                               });
                             }}
-                            placeholder={allowHalf && product.unit === 'unité' ? '0,5 / 1 / 1,5...' : product.unit === 'kg' ? '0,1 / 0,5 / 1...' : '1 / 2 / 3...'}
                             className="w-28 px-3 py-2 text-center border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-farine-green"
                           />
                           <button
