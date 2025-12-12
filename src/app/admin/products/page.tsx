@@ -20,6 +20,7 @@ export default function ProductsPage() {
     description: '',
     libelle_drive: '',
     libelle_caisse: '',
+    allow_half_quantity: false,
   });
 
   useEffect(() => {
@@ -65,6 +66,7 @@ export default function ProductsPage() {
       description: '',
       libelle_drive: '',
       libelle_caisse: '',
+      allow_half_quantity: false,
     });
     setShowModal(true);
   }
@@ -79,6 +81,7 @@ export default function ProductsPage() {
       description: product.description || '',
       libelle_drive: (product as any).libelle_drive || '',
       libelle_caisse: (product as any).libelle_caisse || '',
+      allow_half_quantity: (product as any).allow_half_quantity || false,
     });
     setShowModal(true);
   }
@@ -94,6 +97,7 @@ export default function ProductsPage() {
       description: formData.description || null,
       libelle_drive: formData.libelle_drive || null,
       libelle_caisse: formData.libelle_caisse || null,
+      allow_half_quantity: formData.allow_half_quantity,
     };
 
     try {
@@ -200,6 +204,7 @@ export default function ProductsPage() {
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Unité</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Libellé Drive</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Libellé Caisse</th>
+                    <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">0,5 autorisé</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Statut</th>
                     <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">Actions</th>
                   </tr>
@@ -224,6 +229,15 @@ export default function ProductsPage() {
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600">
                         {(product as any).libelle_caisse || '-'}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        {(product as any).allow_half_quantity ? (
+                          <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                            ✓ Oui
+                          </span>
+                        ) : (
+                          <span className="text-gray-400 text-xs">-</span>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <button
@@ -388,6 +402,29 @@ export default function ProductsPage() {
                   <p className="text-xs text-gray-500 mt-1">
                     Nom affiché sur la caisse
                   </p>
+                </div>
+              </div>
+
+              {/* Autoriser demi-quantités */}
+              <div className="border-t border-gray-200 pt-4">
+                <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
+                  <input
+                    type="checkbox"
+                    id="allow_half_quantity"
+                    checked={formData.allow_half_quantity}
+                    onChange={(e) => setFormData({ ...formData, allow_half_quantity: e.target.checked })}
+                    className="w-4 h-4 text-farine-green focus:ring-farine-green mt-1"
+                  />
+                  <div className="flex-1">
+                    <label htmlFor="allow_half_quantity" className="text-sm font-medium text-gray-900 cursor-pointer block">
+                      Autoriser les demi-quantités (0,5 unité)
+                    </label>
+                    <p className="text-xs text-gray-600 mt-1">
+                      Si coché, les clients pourront commander 0,5 / 1 / 1,5 / 2 unités, etc.
+                      <br />
+                      <span className="font-medium">Exemple :</span> Pain vendu à l'unité mais en demi aussi (1/2 miche)
+                    </p>
+                  </div>
                 </div>
               </div>
 
