@@ -57,7 +57,7 @@ export default function ProductList({ onAddToCart, cart }: ProductListProps) {
 
       if (categoriesError) throw categoriesError;
 
-      // Récupérer les produits actifs
+      // Récupérer les produits actifs AVEC le champ allow_half_quantity
       const { data: productsData, error: productsError } = await supabase
         .from('products')
         .select('*')
@@ -104,6 +104,33 @@ export default function ProductList({ onAddToCart, cart }: ProductListProps) {
         newQuantities.set(product.id, 0);
         return newQuantities;
       });
+    }
+  }
+
+  // Fonction pour déterminer le step en fonction du produit
+  function getStepForProduct(product: Product): string {
+    if (product.unit === 'kg') {
+      return '0.1'; // kg : 0.1 kg minimum
+    } else if ((product as any).allow_half_quantity) {
+      return '0.5'; // unité avec demi autorisé : 0.5 minimum
+    } else {
+      return '1'; // unité standard : 1 minimum
+    }
+  }
+
+  // Fonction pour valider et arrondir la quantité selon le step
+  function validateQuantity(product: Product, value: number): number {
+    if (value <= 0) return 0;
+    
+    if (product.unit === 'kg') {
+      // Pour kg : arrondir à 0.1 près
+      return Math.round(value * 10) / 10;
+    } else if ((product as any).allow_half_quantity) {
+      // Pour unité avec demi : arrondir à 0.5 près
+      return Math.round(value * 2) / 2;
+    } else {
+      // Pour unité standard : arrondir à l'entier
+      return Math.round(value);
     }
   }
 
@@ -155,6 +182,8 @@ export default function ProductList({ onAddToCart, cart }: ProductListProps) {
                   {categoryProducts.map(product => {
                     const quantity = quantities.get(product.id) || 0;
                     const inCart = cart.has(product.id);
+                    const allowHalf = (product as any).allow_half_quantity;
+                    const step = getStepForProduct(product);
 
                     return (
                       <div
@@ -182,9 +211,16 @@ export default function ProductList({ onAddToCart, cart }: ProductListProps) {
                           <span className="text-2xl font-bold text-farine-green">
                             {formatPrice(product.price_ttc)}
                           </span>
-                          <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                            {product.unit === 'kg' ? 'au kg' : 'l\'unité'}
-                          </span>
+                          <div className="text-right">
+                            <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded block">
+                              {product.unit === 'kg' ? 'au kg' : 'l\'unité'}
+                            </span>
+                            {allowHalf && product.unit === 'unité' && (
+                              <span className="text-xs text-green-600 mt-1 block">
+                                demi autorisé
+                              </span>
+                            )}
+                          </div>
                         </div>
 
                         {/* Contrôles quantité */}
@@ -192,16 +228,28 @@ export default function ProductList({ onAddToCart, cart }: ProductListProps) {
                           <input
                             type="number"
                             min="0"
-                            step={product.unit === 'kg' ? '0.1' : '1'}
+                            step={step}
                             value={quantity === 0 ? '' : quantity}
                             onChange={(e) => {
                               const value = parseFloat(e.target.value) || 0;
+                              const validatedValue = validateQuantity(product, value);
                               setQuantities(prev => {
                                 const newQuantities = new Map(prev);
-                                newQuantities.set(product.id, Math.max(0, value));
+                                newQuantities.set(product.id, Math.max(0, validatedValue));
                                 return newQuantities;
                               });
                             }}
+                            onBlur={(e) => {
+                              // Validation finale au blur pour s'assurer que la valeur respecte le step
+                              const value = parseFloat(e.target.value) || 0;
+                              const validatedValue = validateQuantity(product, value);
+                              setQuantities(prev => {
+                                const newQuantities = new Map(prev);
+                                newQuantities.set(product.id, Math.max(0, validatedValue));
+                                return newQuantities;
+                              });
+                            }}
+                            placeholder={allowHalf && product.unit === 'unité' ? '0,5 / 1 / 1,5...' : product.unit === 'kg' ? '0,1 / 0,5 / 1...' : '1 / 2 / 3...'}
                             className="w-28 px-3 py-2 text-center border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-farine-green"
                           />
                           <button
