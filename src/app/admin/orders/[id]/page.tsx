@@ -14,7 +14,7 @@ export default function OrderDetailPage() {
   const orderId = parseInt(params.id as string);
 
   const [order, setOrder] = useState<Order | null>(null);
-  const [items, setItems] = useState<OrderItem[]>([]);
+  const [items, setItems] = useState<any[]>([]);
   const [statuses, setStatuses] = useState<OrderStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -53,9 +53,13 @@ export default function OrderDetailPage() {
         status: orderData.status,
       });
 
+      // Récupérer les items AVEC l'unité du produit
       const { data: itemsData, error: itemsError } = await supabase
         .from('order_items')
-        .select('*')
+        .select(`
+          *,
+          product:products(unit)
+        `)
         .eq('order_id', orderId);
 
       if (itemsError) throw itemsError;
@@ -128,6 +132,27 @@ export default function OrderDetailPage() {
 
   function handlePrint() {
     window.print();
+  }
+
+  // Fonction pour formater la quantité avec l'unité
+  function formatQuantityWithUnit(quantity: number, unit: string): string {
+    if (unit === 'kg') {
+      return `${quantity} kg`;
+    } else {
+      // Pour les unités, gérer le singulier/pluriel et les demi
+      if (quantity === 0.5) {
+        return '0,5 unité';
+      } else if (quantity === 1) {
+        return '1 unité';
+      } else if (quantity % 1 === 0.5) {
+        // Cas comme 1.5, 2.5, etc.
+        return `${quantity.toString().replace('.', ',')} unités`;
+      } else if (quantity > 1) {
+        return `${quantity} unités`;
+      } else {
+        return `${quantity} unité`;
+      }
+    }
   }
 
   if (loading) {
@@ -307,18 +332,23 @@ export default function OrderDetailPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {items.map((item) => (
-                    <tr key={item.id}>
-                      <td className="px-4 py-3 font-medium">{item.product_name}</td>
-                      <td className="px-4 py-3 text-right">{item.quantity}</td>
-                      <td className="px-4 py-3 text-right">
-                        {formatPrice(item.unit_price_ttc)}
-                      </td>
-                      <td className="px-4 py-3 text-right font-semibold">
-                        {formatPrice(item.subtotal_ttc)}
-                      </td>
-                    </tr>
-                  ))}
+                  {items.map((item) => {
+                    const unit = item.product?.unit || 'unité';
+                    return (
+                      <tr key={item.id}>
+                        <td className="px-4 py-3 font-medium">{item.product_name}</td>
+                        <td className="px-4 py-3 text-right">
+                          {formatQuantityWithUnit(item.quantity, unit)}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          {formatPrice(item.unit_price_ttc)}
+                        </td>
+                        <td className="px-4 py-3 text-right font-semibold">
+                          {formatPrice(item.subtotal_ttc)}
+                        </td>
+                      </tr>
+                    );
+                  })}
                   <tr className="bg-farine-beige font-bold">
                     <td colSpan={3} className="px-4 py-3 text-right">
                       Total TTC
@@ -411,4 +441,3 @@ export default function OrderDetailPage() {
     </div>
   );
 }
- 
