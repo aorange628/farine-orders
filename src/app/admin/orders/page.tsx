@@ -208,37 +208,96 @@ export default function OrdersPage() {
     const selectedOrdersList = orders.filter(o => selectedOrders.has(o.id));
     const orderIds = selectedOrdersList.map(o => o.id);
 
-    // Récupérer les lignes de commandes avec produits
+    if (orderIds.length === 0) {
+      alert('Veuillez sélectionner au moins une commande');
+      return;
+    }
+
+    // Récupérer TOUS les produits (actifs ou non) avec leur libellé Drive et unité
+    const { data: allProducts } = await supabase
+      .from('products')
+      .select('id, name, libelle_drive, unit')
+      .order('name');
+
+    // Récupérer les lignes de commandes
     const { data: items } = await supabase
       .from('order_items')
-      .select('*, order:orders(pickup_date), product:products(category_id)')
+      .select('*, order:orders(pickup_date)')
       .in('order_id', orderIds);
 
-    // Agréger par produit et date
-    const aggregated = new Map();
-    (items || []).forEach((item: any) => {
-      const key = `${item.product_name}_${item.order.pickup_date}`;
-      if (aggregated.has(key)) {
-        aggregated.get(key).quantity += item.quantity;
-      } else {
-        aggregated.set(key, {
-          product: item.product_name,
-          date: new Date(item.order.pickup_date).toLocaleDateString('fr-FR'),
-          quantity: item.quantity,
-        });
+    if (!items || items.length === 0) {
+      alert('Aucun produit dans les commandes sélectionnées');
+      return;
+    }
+
+    // Extraire toutes les dates uniques et les trier
+    const datesSet = new Set<string>();
+    items.forEach((item: any) => {
+      datesSet.add(item.order.pickup_date);
+    });
+    const sortedDates = Array.from(datesSet).sort();
+
+    // Générer TOUTES les dates entre la première et la dernière
+    const allDates: string[] = [];
+    if (sortedDates.length > 0) {
+      const startDate = new Date(sortedDates[0]);
+      const endDate = new Date(sortedDates[sortedDates.length - 1]);
+      
+      for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+        allDates.push(d.toISOString().split('T')[0]);
       }
+    }
+
+    // Créer un Map pour agréger les quantités par produit et date
+    const quantityMap = new Map<string, number>();
+    items.forEach((item: any) => {
+      const key = `${item.product_name}_${item.order.pickup_date}`;
+      quantityMap.set(key, (quantityMap.get(key) || 0) + item.quantity);
     });
 
-    const data = Array.from(aggregated.values()).map(item => ({
-      'Produit': item.product,
-      'Date d\'enlèvement': item.date,
-      'Quantité totale': item.quantity,
-    }));
+    // Construire le tableau croisé
+    const reportData: any[] = [];
 
-    const ws = XLSX.utils.json_to_sheet(data);
+    allProducts?.forEach(product => {
+      const row: any = {
+        'Libellé Drive': product.libelle_drive || product.name,
+        'Unité': product.unit || 'unité',
+      };
+
+      // Ajouter les quantités pour chaque date
+      allDates.forEach(date => {
+        const key = `${product.name}_${date}`;
+        const quantity = quantityMap.get(key) || 0;
+        const dateFormatted = new Date(date).toLocaleDateString('fr-FR', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric'
+        });
+        row[dateFormatted] = quantity || '-';
+      });
+
+      reportData.push(row);
+    });
+
+    // Créer le fichier Excel
+    const ws = XLSX.utils.json_to_sheet(reportData);
+    
+    // Ajuster la largeur des colonnes
+    const colWidths = [
+      { wch: 30 }, // Libellé Drive
+      { wch: 8 },  // Unité
+    ];
+    // Ajouter la largeur pour chaque date
+    allDates.forEach(() => {
+      colWidths.push({ wch: 12 });
+    });
+    ws['!cols'] = colWidths;
+
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Production');
-    XLSX.writeFile(wb, `rapport_production_${new Date().toISOString().split('T')[0]}.xlsx`);
+    
+    const filename = `rapport_production_${sortedDates[0]}_${sortedDates[sortedDates.length - 1]}.xlsx`;
+    XLSX.writeFile(wb, filename);
   }
 
   async function exportOrdersToPDF() {
