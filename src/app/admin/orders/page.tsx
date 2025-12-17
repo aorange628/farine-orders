@@ -213,10 +213,10 @@ export default function OrdersPage() {
       return;
     }
 
-    // Récupérer TOUS les produits (actifs ou non) avec leur libellé Drive et unité
+    // Récupérer TOUS les produits (actifs ou non) avec leur libellé Drive, unité et poids
     const { data: allProducts } = await supabase
       .from('products')
-      .select('id, name, libelle_drive, unit')
+      .select('id, name, libelle_drive, unit, weight_per_unit')
       .order('name');
 
     // Récupérer les lignes de commandes
@@ -261,6 +261,7 @@ export default function OrdersPage() {
     allProducts?.forEach(product => {
       const row: any = {
         'Libellé Drive': product.libelle_drive || product.name,
+        'Poids (kg)': product.weight_per_unit || '-',
         'Unité': product.unit || 'unité',
       };
 
@@ -285,6 +286,7 @@ export default function OrdersPage() {
     // Ajuster la largeur des colonnes
     const colWidths = [
       { wch: 30 }, // Libellé Drive
+      { wch: 10 }, // Poids (kg)
       { wch: 8 },  // Unité
     ];
     // Ajouter la largeur pour chaque date
