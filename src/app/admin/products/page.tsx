@@ -392,7 +392,6 @@ export default function ProductsPage() {
                   min="0"
                   value={formData.weight_per_unit}
                   onChange={(e) => setFormData({ ...formData, weight_per_unit: e.target.value })}
-                  placeholder="Ex: 1.1"
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   Poids moyen en kg (ex: 1,1 pour une miche de 1,1kg)
