@@ -21,6 +21,7 @@ export default function ProductsPage() {
     libelle_drive: '',
     libelle_caisse: '',
     allow_half_quantity: false,
+    weight_per_unit: '',
   });
 
   useEffect(() => {
@@ -67,6 +68,7 @@ export default function ProductsPage() {
       libelle_drive: '',
       libelle_caisse: '',
       allow_half_quantity: false,
+      weight_per_unit: '',
     });
     setShowModal(true);
   }
@@ -82,6 +84,7 @@ export default function ProductsPage() {
       libelle_drive: (product as any).libelle_drive || '',
       libelle_caisse: (product as any).libelle_caisse || '',
       allow_half_quantity: (product as any).allow_half_quantity || false,
+      weight_per_unit: (product as any).weight_per_unit?.toString() || '',
     });
     setShowModal(true);
   }
@@ -98,6 +101,7 @@ export default function ProductsPage() {
       libelle_drive: formData.libelle_drive || null,
       libelle_caisse: formData.libelle_caisse || null,
       allow_half_quantity: formData.allow_half_quantity,
+      weight_per_unit: formData.weight_per_unit ? parseFloat(formData.weight_per_unit) : null,
     };
 
     try {
@@ -202,6 +206,7 @@ export default function ProductsPage() {
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Nom</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Prix TTC</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Unité</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Poids (kg)</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Libellé Drive</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Libellé Caisse</th>
                     <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">0,5 autorisé</th>
@@ -224,6 +229,9 @@ export default function ProductsPage() {
                       </td>
                       <td className="px-4 py-3 font-semibold">{formatPrice(product.price_ttc)}</td>
                       <td className="px-4 py-3 text-sm">{product.unit}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        {(product as any).weight_per_unit ? `${(product as any).weight_per_unit} kg` : '-'}
+                      </td>
                       <td className="px-4 py-3 text-sm text-gray-600">
                         {(product as any).libelle_drive || '-'}
                       </td>
@@ -371,6 +379,24 @@ export default function ProductsPage() {
                     <option value="kg">kg</option>
                   </select>
                 </div>
+              </div>
+
+              {/* Poids par unité */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Poids par unité (kg)
+                </label>
+                <input
+                  type="number"
+                  step="0.001"
+                  min="0"
+                  value={formData.weight_per_unit}
+                  onChange={(e) => setFormData({ ...formData, weight_per_unit: e.target.value })}
+                  placeholder="Ex: 1.1"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Poids moyen en kg (ex: 1,1 pour une miche de 1,1kg)
+                </p>
               </div>
 
               {/* Libellé Drive et Libellé Caisse */}
