@@ -62,7 +62,6 @@ export default function ProductList({ onAddToCart, cart }: ProductListProps) {
         .from('products')
         .select('*')
         .eq('is_active', true)
-        .order('sort_order')
         .order('name');
 
       if (productsError) throw productsError;
@@ -111,7 +110,7 @@ export default function ProductList({ onAddToCart, cart }: ProductListProps) {
   // Fonction pour déterminer le step en fonction du produit
   function getStepForProduct(product: Product): string {
     if (product.unit === 'kg') {
-      return '0.1'; // kg : 0.1 kg minimum
+      return '0.05'; // kg : 0,05 kg minimum (50 grammes)
     } else if ((product as any).allow_half_quantity) {
       return '0.5'; // unité avec demi autorisé : 0.5 minimum
     } else {
@@ -124,8 +123,8 @@ export default function ProductList({ onAddToCart, cart }: ProductListProps) {
     if (value <= 0) return 0;
     
     if (product.unit === 'kg') {
-      // Pour kg : arrondir à 0.1 près
-      return Math.round(value * 10) / 10;
+      // Pour kg : arrondir à 0,05 près (50 grammes)
+      return Math.round(value * 20) / 20;
     } else if ((product as any).allow_half_quantity) {
       // Pour unité avec demi : arrondir à 0.5 près
       return Math.round(value * 2) / 2;
