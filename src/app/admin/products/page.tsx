@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Product, Category, ProductWithCategory } from '@/types';
 import { formatPrice } from '@/lib/utils';
-import { Plus, Edit2, Trash2, X, Check } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Check, ArrowUp, ArrowDown } from 'lucide-react';
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<ProductWithCategory[]>([]);
@@ -46,6 +46,8 @@ export default function ProductsPage() {
           *,
           category:categories(*)
         `)
+        .order('category_id')
+        .order('sort_order')
         .order('name');
 
       if (productsError) throw productsError;
@@ -163,6 +165,58 @@ export default function ProductsPage() {
     }
   }
 
+  async function moveProductUp(product: Product) {
+    const categoryProducts = products.filter(p => p.category_id === product.category_id);
+    const currentIndex = categoryProducts.findIndex(p => p.id === product.id);
+    
+    if (currentIndex <= 0) return; // Déjà en première position
+    
+    const previousProduct = categoryProducts[currentIndex - 1];
+    
+    try {
+      // Échanger les sort_order
+      await supabase
+        .from('products')
+        .update({ sort_order: previousProduct.sort_order })
+        .eq('id', product.id);
+      
+      await supabase
+        .from('products')
+        .update({ sort_order: product.sort_order })
+        .eq('id', previousProduct.id);
+      
+      fetchData();
+    } catch (error) {
+      console.error('Erreur déplacement produit:', error);
+    }
+  }
+
+  async function moveProductDown(product: Product) {
+    const categoryProducts = products.filter(p => p.category_id === product.category_id);
+    const currentIndex = categoryProducts.findIndex(p => p.id === product.id);
+    
+    if (currentIndex >= categoryProducts.length - 1) return; // Déjà en dernière position
+    
+    const nextProduct = categoryProducts[currentIndex + 1];
+    
+    try {
+      // Échanger les sort_order
+      await supabase
+        .from('products')
+        .update({ sort_order: nextProduct.sort_order })
+        .eq('id', product.id);
+      
+      await supabase
+        .from('products')
+        .update({ sort_order: product.sort_order })
+        .eq('id', nextProduct.id);
+      
+      fetchData();
+    } catch (error) {
+      console.error('Erreur déplacement produit:', error);
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -271,6 +325,22 @@ export default function ProductsPage() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex justify-end gap-2">
+                          <button
+                            onClick={() => moveProductUp(product)}
+                            disabled={categoryProducts.findIndex(p => p.id === product.id) === 0}
+                            className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed"
+                            title="Monter"
+                          >
+                            <ArrowUp className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => moveProductDown(product)}
+                            disabled={categoryProducts.findIndex(p => p.id === product.id) === categoryProducts.length - 1}
+                            className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed"
+                            title="Descendre"
+                          >
+                            <ArrowDown className="w-4 h-4" />
+                          </button>
                           <button
                             onClick={() => openEditModal(product)}
                             className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
@@ -392,6 +462,7 @@ export default function ProductsPage() {
                   min="0"
                   value={formData.weight_per_unit}
                   onChange={(e) => setFormData({ ...formData, weight_per_unit: e.target.value })}
+                  placeholder="Ex: 1.1"
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   Poids moyen en kg (ex: 1,1 pour une miche de 1,1kg)
