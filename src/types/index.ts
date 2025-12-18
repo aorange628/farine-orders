@@ -1,5 +1,4 @@
 // Types pour la base de données FARINE
-
 export interface Category {
   id: number;
   name: string;
@@ -27,6 +26,11 @@ export interface Product {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  libelle_drive?: string | null;
+  libelle_caisse?: string | null;
+  allow_half_quantity?: boolean;
+  weight_per_unit?: number | null;
+  sort_order?: number;
 }
 
 export interface ProductWithCategory extends Product {
@@ -71,7 +75,6 @@ export interface Setting {
 }
 
 // Types pour les formulaires
-
 export interface CreateProductInput {
   category_id: number;
   name: string;
@@ -132,6 +135,7 @@ export interface OrderSummary {
   status: string;
   items_count: number;
 }
+
 export interface CalendarOverride {
   id: number;
   date: string;
@@ -139,7 +143,7 @@ export interface CalendarOverride {
   open_time: string | null;
   close_time: string | null;
   reason: string | null;
-  cutoff_date: string | null; // AJOUTER CETTE LIGNE
+  cutoff_date: string | null;
   created_at: string;
 }
 
