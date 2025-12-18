@@ -62,6 +62,7 @@ export default function ProductList({ onAddToCart, cart }: ProductListProps) {
         .from('products')
         .select('*')
         .eq('is_active', true)
+        .order('sort_order')
         .order('name');
 
       if (productsError) throw productsError;
