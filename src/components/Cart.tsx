@@ -14,6 +14,7 @@ interface CartProps {
 }
 
 export interface OrderFormData {
+  customer_firstname: string; 
   customer_name: string;
   customer_phone: string;
   pickup_date: string;
@@ -23,6 +24,7 @@ export interface OrderFormData {
 
 export default function Cart({ cart, onRemoveFromCart, onUpdateQuantity, onSubmitOrder }: CartProps) {
   const [formData, setFormData] = useState<OrderFormData>({
+    customer_firstname: '',
     customer_name: '',
     customer_phone: '',
     pickup_date: '',
@@ -87,6 +89,9 @@ export default function Cart({ cart, onRemoveFromCart, onUpdateQuantity, onSubmi
 
   function validateForm(): boolean {
     const newErrors: Partial<Record<keyof OrderFormData, string>> = {};
+     if (!formData.customer_firstname.trim()) {
+      newErrors.customer_firstname = 'Le prénom est obligatoire';
+    }
 
     if (!formData.customer_name.trim()) {
       newErrors.customer_name = 'Le nom est obligatoire';
