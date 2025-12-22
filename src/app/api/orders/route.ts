@@ -12,6 +12,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const {
+      customer_firstname,  // ← AJOUT
       customer_name,
       customer_phone,
       pickup_date,
@@ -21,7 +22,7 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Validation des données
-    if (!customer_name || !customer_phone || !pickup_date || !pickup_time) {
+    if (!customer_firstname || !customer_name || !customer_phone || !pickup_date || !pickup_time) {  // ← MODIFIÉ
       return NextResponse.json(
         { error: 'Champs obligatoires manquants' },
         { status: 400 }
@@ -93,7 +94,7 @@ export async function POST(request: NextRequest) {
       .from('orders')
       .insert({
         order_number,
-        customer_firstname: orderData.customer_firstname, 
+        customer_firstname,  // ← CORRIGÉ
         customer_name,
         customer_phone,
         pickup_date,
