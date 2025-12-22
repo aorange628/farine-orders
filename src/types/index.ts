@@ -40,6 +40,7 @@ export interface ProductWithCategory extends Product {
 export interface Order {
   id: number;
   order_number: string;
+  customer_firstname: string;
   customer_name: string;
   customer_phone: string;
   pickup_date: string;
