@@ -130,7 +130,7 @@ export default function OrdersPage() {
 
     const selectedOrdersList = orders.filter(o => selectedOrders.has(o.id));
     
-    const confirmMsg = `Êtes-vous sûr de vouloir changer le statut de ${selectedOrdersList.length} commande(s) vers "${selectedNewStatus}" ?\n\nCommandes concernées :\n${selectedOrdersList.map(o => `- ${o.order_number} (${o.customer_name})`).slice(0, 10).join('\n')}${selectedOrdersList.length > 10 ? '\n...' : ''}`;
+    const confirmMsg = `Êtes-vous sûr de vouloir changer le statut de ${selectedOrdersList.length} commande(s) vers "${selectedNewStatus}" ?\n\nCommandes concernées :\n${selectedOrdersList.map(o => `- ${o.order_number} (${o.customer_firstname} ${o.customer_name})`).slice(0, 10).join('\n')}${selectedOrdersList.length > 10 ? '\n...' : ''}`;
     
     if (!confirm(confirmMsg)) {
       return;
@@ -160,7 +160,8 @@ export default function OrdersPage() {
     
     const data = selectedOrdersList.map(order => ({
       'N° Commande': order.order_number,
-      'Client': order.customer_name,
+      'Prénom': order.customer_firstname || '',
+      'Nom': order.customer_name,
       'Téléphone': order.customer_phone,
       'Date commande': new Date(order.created_at).toLocaleDateString('fr-FR'),
       'Heure commande': new Date(order.created_at).toLocaleTimeString('fr-FR'),
@@ -185,12 +186,12 @@ export default function OrdersPage() {
     // Récupérer les lignes de commandes
     const { data: items } = await supabase
       .from('order_items')
-      .select('*, order:orders(order_number, customer_name, pickup_date)')
+      .select('*, order:orders(order_number, customer_firstname, customer_name, pickup_date)')
       .in('order_id', orderIds);
 
     const data = (items || []).map((item: any) => ({
       'N° Commande': item.order.order_number,
-      'Client': item.order.customer_name,
+      'Client': `${item.order.customer_firstname || ''} ${item.order.customer_name}`.trim(),
       'Date enlèvement': new Date(item.order.pickup_date).toLocaleDateString('fr-FR'),
       'Produit': item.product_name,
       'Quantité': item.quantity,
@@ -403,7 +404,7 @@ export default function OrdersPage() {
       
       yPos += 11;
 
-      // === INFORMATIONS CLIENT : NOM + TÉLÉPHONE SUR MÊME LIGNE ===
+      // === INFORMATIONS CLIENT : PRÉNOM + NOM + TÉLÉPHONE SUR MÊME LIGNE ===
       pdf.setTextColor(0, 0, 0);
       pdf.setFontSize(10);
       pdf.setFont('helvetica', 'bold');
@@ -412,7 +413,8 @@ export default function OrdersPage() {
 
       pdf.setFont('helvetica', 'normal');
       pdf.setFontSize(9);
-      pdf.text(`Nom : ${order.customer_name}`, margin + 3, yPos);
+      const fullName = `${order.customer_firstname || ''} ${order.customer_name}`.trim();
+      pdf.text(`Nom : ${fullName}`, margin + 3, yPos);
       
       // Téléphone à droite sur la même ligne
       pdf.text(`Téléphone : ${order.customer_phone}`, margin + 100, yPos);
@@ -825,7 +827,7 @@ export default function OrdersPage() {
                       </button>
                     </td>
                     <td className="px-4 py-3 text-sm font-mono">{order.order_number}</td>
-                    <td className="px-4 py-3 text-sm">{order.customer_name}</td>
+                    <td className="px-4 py-3 text-sm">{order.customer_firstname} {order.customer_name}</td>
                     <td className="px-4 py-3 text-sm">
                       {new Date(order.pickup_date).toLocaleDateString('fr-FR')} à {order.pickup_time}
                     </td>
