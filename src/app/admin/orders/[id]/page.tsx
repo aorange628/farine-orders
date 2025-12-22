@@ -20,6 +20,7 @@ export default function OrderDetailPage() {
   const [saving, setSaving] = useState(false);
 
   const [formData, setFormData] = useState({
+    customer_firstname: '',
     customer_name: '',
     customer_phone: '',
     pickup_date: '',
@@ -44,6 +45,7 @@ export default function OrderDetailPage() {
       if (orderError) throw orderError;
       setOrder(orderData);
       setFormData({
+        customer_firstname: orderData.customer_firstname || '',
         customer_name: orderData.customer_name,
         customer_phone: orderData.customer_phone,
         pickup_date: orderData.pickup_date,
@@ -87,6 +89,7 @@ export default function OrderDetailPage() {
       const { error } = await supabase
         .from('orders')
         .update({
+          customer_firstname: formData.customer_firstname,
           customer_name: formData.customer_name,
           customer_phone: formData.customer_phone,
           pickup_date: formData.pickup_date,
@@ -220,6 +223,18 @@ export default function OrderDetailPage() {
               Informations client
             </h2>
             <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Prénom du client
+                </label>
+                <input
+                  type="text"
+                  value={formData.customer_firstname}
+                  onChange={(e) =>
+                    setFormData({ ...formData, customer_firstname: e.target.value })
+                  }
+                />
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Nom du client
