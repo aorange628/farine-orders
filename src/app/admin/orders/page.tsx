@@ -368,17 +368,96 @@ export default function OrdersPage() {
     const pageHeight = 297;
     const margin = 10;
     const contentWidth = pageWidth - (2 * margin);
+    const maxContentHeight = pageHeight - (2 * margin) - 10; // Garder 10mm pour le footer
 
-    let totalPages = ordersWithItems.length;
-    let currentPage = 0;
+    let currentYPos = margin;
+    let pageNumber = 1;
 
-    ordersWithItems.forEach((order: any, orderIndex: number) => {
-      if (orderIndex > 0) {
-        pdf.addPage();
+    // Fonction pour calculer la hauteur d'une commande
+    function calculateOrderHeight(order: any): number {
+      let height = 0;
+      
+      // En-tête (N° commande + date)
+      height += 11;
+      
+      // Infos client
+      height += 5 + 7; // Titre + 1 ligne
+      
+      // Infos enlèvement
+      height += 5 + 7; // Titre + 1 ligne
+      
+      // Tableau articles
+      height += 6; // Titre
+      height += 7; // En-tête tableau
+      height += (order.order_items?.length || 0) * 5; // Lignes
+      height += 5; // Séparation
+      height += 10; // Total
+      
+      // Statut
+      height += 6;
+      
+      // Commentaires
+      if (order.customer_comment) {
+        const commentLines = pdf.splitTextToSize(order.customer_comment, contentWidth - 6);
+        height += 4 + (commentLines.length * 3.5) + 3;
       }
-      currentPage++;
+      if (order.farine_comment) {
+        const commentLines = pdf.splitTextToSize(order.farine_comment, contentWidth - 6);
+        height += 4 + (commentLines.length * 3.5) + 3;
+      }
+      
+      // Marge de sécurité
+      height += 10;
+      
+      return height;
+    }
 
-      let yPos = margin;
+    // Fonction pour ajouter le footer
+    function addFooter(pageNum: number, totalPages: number) {
+      pdf.setFontSize(8);
+      pdf.setTextColor(128, 128, 128);
+      pdf.text(
+        `Page ${pageNum} / ${totalPages}`,
+        pageWidth / 2,
+        pageHeight - 8,
+        { align: 'center' }
+      );
+      pdf.text(
+        `Imprimé le ${new Date().toLocaleString('fr-FR')}`,
+        margin,
+        pageHeight - 8
+      );
+    }
+
+    // Calculer le nombre total de pages (approximatif pour le footer)
+    let totalPages = 1;
+    let tempYPos = margin;
+    ordersWithItems.forEach((order: any) => {
+      const orderHeight = calculateOrderHeight(order);
+      if (tempYPos + orderHeight > maxContentHeight + margin && tempYPos > margin) {
+        totalPages++;
+        tempYPos = margin;
+      }
+      tempYPos += orderHeight;
+    });
+
+    // Dessiner toutes les commandes
+    ordersWithItems.forEach((order: any, orderIndex: number) => {
+      const orderHeight = calculateOrderHeight(order);
+      
+      // Vérifier si on doit créer une nouvelle page
+      // Exception : si c'est la première commande de la page, on la dessine même si elle dépasse
+      if (currentYPos + orderHeight > maxContentHeight + margin && currentYPos > margin) {
+        // Ajouter le footer sur la page actuelle
+        addFooter(pageNumber, totalPages);
+        
+        // Nouvelle page
+        pdf.addPage();
+        pageNumber++;
+        currentYPos = margin;
+      }
+
+      let yPos = currentYPos;
 
       // === EN-TÊTE : N° COMMANDE + DATE COMMANDE SUR MÊME LIGNE ===
       pdf.setFillColor(240, 240, 240);
@@ -552,69 +631,32 @@ export default function OrdersPage() {
         yPos += (commentLines.length * 3.5) + 3;
       }
 
-      // Espace pour notes manuscrites si on a de la place
-      if (yPos < pageHeight - 35) {
-        yPos += 3;
-        pdf.setFontSize(9);
-        pdf.setFont('helvetica', 'bold');
-        pdf.text('NOTES :', margin, yPos);
-        yPos += 4;
-        
-        // Lignes pour écriture
-        pdf.setDrawColor(220, 220, 220);
-        pdf.setLineWidth(0.1);
-        for (let i = 0; i < 3; i++) {
-          if (yPos + (i * 6) < pageHeight - 15) {
-            pdf.line(margin, yPos + (i * 6), pageWidth - margin, yPos + (i * 6));
-          }
-        }
+      // Ajouter un séparateur entre les commandes (sauf pour la dernière)
+      if (orderIndex < ordersWithItems.length - 1) {
+        yPos += 5;
+        pdf.setDrawColor(100, 100, 100);
+        pdf.setLineWidth(0.5);
+        pdf.line(margin, yPos, pageWidth - margin, yPos);
+        yPos += 5;
       }
 
-      // === NUMÉRO DE PAGE EN BAS ===
-      pdf.setFontSize(8);
-      pdf.setTextColor(128, 128, 128);
-      pdf.text(
-        `Page ${currentPage} / ${totalPages}`,
-        pageWidth / 2,
-        pageHeight - 8,
-        { align: 'center' }
-      );
-
-      // Date d'impression
-      pdf.text(
-        `Imprimé le ${new Date().toLocaleString('fr-FR')}`,
-        margin,
-        pageHeight - 8
-      );
+      // Mettre à jour la position Y pour la prochaine commande
+      currentYPos = yPos;
     });
+
+    // Ajouter le footer sur la dernière page
+    addFooter(pageNumber, totalPages);
 
     // Télécharger le PDF
     const fileName = `commandes_${new Date().toISOString().split('T')[0]}.pdf`;
     pdf.save(fileName);
 
-    // === METTRE À JOUR LE STATUT DES COMMANDES VALIDES EN "Imprimé" ===
-    try {
-      const { error } = await supabase
-        .from('orders')
-        .update({ status: 'Imprimé' })
-        .in('id', orderIds);
-
-      if (error) {
-        console.error('Erreur lors de la mise à jour du statut:', error);
-        alert('PDF généré mais erreur lors de la mise à jour du statut');
-      } else {
-        // Rafraîchir la liste des commandes pour voir le changement
-        await fetchOrders();
-        let message = `PDF généré ! ${orderIds.length} commande(s) passée(s) en statut "Imprimé"`;
-        if (excludedOrdersList.length > 0) {
-          message += `\n\n${excludedOrdersList.length} commande(s) exclue(s) (Annulé/En suspens)`;
-        }
-        alert(message);
-      }
-    } catch (error) {
-      console.error('Erreur:', error);
-      alert('PDF généré mais erreur lors de la mise à jour du statut');
+    // PLUS DE CHANGEMENT DE STATUT AUTOMATIQUE
+    let message = `PDF généré avec succès ! ${validOrdersList.length} commande(s) imprimée(s)`;
+    if (excludedOrdersList.length > 0) {
+      message += `\n\n${excludedOrdersList.length} commande(s) exclue(s) (Annulé/En suspens)`;
     }
+    alert(message);
   }
 
   const filteredOrders = orders;
