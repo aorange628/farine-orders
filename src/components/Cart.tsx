@@ -215,6 +215,27 @@ export default function Cart({ cart, onRemoveFromCart, onUpdateQuantity, onSubmi
         </h2>
 
         <div className="space-y-4">
+           {/* Prénom - NOUVEAU CHAMP */}
+  <div>
+    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+      <User className="w-4 h-4" />
+      Prénom <span className="text-red-500">*</span>
+    </label>
+    <input
+      type="text"
+      value={formData.customer_firstname}
+      onChange={(e) =>
+        setFormData({ ...formData, customer_firstname: e.target.value })
+      }
+      className={errors.customer_firstname ? 'border-red-500' : ''}
+      placeholder="Votre prénom"
+    />
+    {errors.customer_firstname && (
+      <p className="text-red-500 text-sm mt-1">{errors.customer_firstname}</p>
+    )}
+  </div>
+
+
           {/* Nom */}
           <div>
             <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
