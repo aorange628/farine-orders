@@ -31,16 +31,18 @@ export function isClosedDate(
 
 /**
  * Vérifie si une date peut être sélectionnée comme date d'enlèvement
- * en tenant compte des extensions de délai (cutoff_date)
+ * en tenant compte des extensions de délai (cutoff_date) UNIQUEMENT pour le Pain
  * @param date - Date candidate
  * @param overrides - Map des overrides
  * @param baseMinDate - Date minimum calculée selon les règles normales
+ * @param categoryName - Catégorie du produit ('Pain' ou 'Autre')
  * @returns true si la date est sélectionnable
  */
 export function isDateSelectableForPickup(
   date: Date,
   overrides: Map<string, CalendarOverride>,
-  baseMinDate: Date
+  baseMinDate: Date,
+  categoryName: string
 ): boolean {
   // Si le jour est fermé, jamais sélectionnable
   if (isClosedDate(date, overrides)) {
@@ -50,12 +52,11 @@ export function isDateSelectableForPickup(
   const dateString = format(date, 'yyyy-MM-dd');
   const override = overrides.get(dateString);
   
-   // Si la date a un cutoff_date, c'est une extension de délai
-  if (override && override.cutoff_date) {
+  // Extension de délai (cutoff_date) UNIQUEMENT pour le Pain
+  if (categoryName === 'Pain' && override && override.cutoff_date) {
     const cutoffDate = new Date(override.cutoff_date + 'T23:59:59');
     const now = new Date();
     
-   
     // On peut commander pour ce jour SI on est encore avant le cutoff
     if (now <= cutoffDate) {
       return true; // Extension autorisée
@@ -64,13 +65,13 @@ export function isDateSelectableForPickup(
     }
   }
   
- 
-  // Pas de cutoff, utiliser les règles normales
+  // Pour les autres catégories OU si pas de cutoff, utiliser les règles normales
   return date >= baseMinDate;
 }
+
 /**
  * Calcule la date d'enlèvement la plus proche selon les règles métier
- * VERSION AVEC EXTENSIONS DE DÉLAI (cutoff_date)
+ * VERSION AVEC EXTENSIONS DE DÉLAI (cutoff_date) UNIQUEMENT POUR LE PAIN
  * @param categoryName - Nom de la catégorie du produit
  * @param overrides - Map des overrides indexés par date YYYY-MM-DD
  * @returns Date minimum d'enlèvement
@@ -124,15 +125,13 @@ export function calculateEarliestPickupDate(
     }
   }
   
-  // MAINTENANT chercher la date la plus proche disponible
-  // Cela peut être AVANT baseMinDate si un jour a un cutoff_date qui l'autorise
-  
+  // Chercher la date la plus proche disponible
   let candidateDate = new Date(now);
-  candidateDate.setDate(candidateDate.getDate() + 1); // Commencer à demain
+  candidateDate.setDate(candidateDate.getDate() + 1);
   
   // Chercher jusqu'à 60 jours dans le futur max
   for (let i = 0; i < 60; i++) {
-    if (isDateSelectableForPickup(candidateDate, overrides, baseMinDate)) {
+    if (isDateSelectableForPickup(candidateDate, overrides, baseMinDate, categoryName)) {
       return candidateDate;
     }
     candidateDate.setDate(candidateDate.getDate() + 1);
