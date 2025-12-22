@@ -93,6 +93,7 @@ export async function POST(request: NextRequest) {
       .from('orders')
       .insert({
         order_number,
+        customer_firstname: orderData.customer_firstname, 
         customer_name,
         customer_phone,
         pickup_date,
