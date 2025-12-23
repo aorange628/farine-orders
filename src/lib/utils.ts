@@ -54,7 +54,7 @@ export function isDateSelectableForPickup(
   
   // Extension de délai (cutoff_date) UNIQUEMENT pour le Pain
   if (categoryName === 'Pain' && override && override.cutoff_date) {
-    const cutoffDate = new Date(override.cutoff_date + 'T23:59:59');
+    const cutoffDate = new Date(override.cutoff_date + 'T20:00:00');
     const now = new Date();
     
     // On peut commander pour ce jour SI on est encore avant le cutoff
