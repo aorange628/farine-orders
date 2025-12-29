@@ -554,7 +554,7 @@ export default function OrdersPage() {
         pdf.text(item.quantity.toString(), margin + 5, yPos + 3.5, { align: 'center' });
         
         // Unité (centrée)
-        const unit = item.product?.unit || 'unité';
+        const unit = item.product?.unit_commande || 'unité';
         pdf.text(unit, margin + 20, yPos + 3.5, { align: 'center' });
         
         // Produit (tronqué si trop long)
