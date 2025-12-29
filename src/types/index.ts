@@ -125,7 +125,8 @@ export interface ProductionReport {
   product_name: string;
   category_name: string;
   total_quantity: number;
-  unit: string;
+  unit_b2c: string;
+  unit_b2b: string;
   pickup_date: string;
 }
 
