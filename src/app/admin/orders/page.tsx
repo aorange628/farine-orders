@@ -325,7 +325,7 @@ export default function OrdersPage() {
         month: '2-digit',
         year: 'numeric'
       });
-      row[dateFormatted] = quantity || '-';
+      row[dateFormatted] = quantity || '';
     });
 
     reportData.push(row);
