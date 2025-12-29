@@ -107,6 +107,11 @@ export default function ProductList({ onAddToCart, cart }: ProductListProps) {
     }
   }
 
+  // Fonction pour arrondir et éviter les erreurs de précision JavaScript
+  function roundQuantity(value: number): number {
+    return Math.round(value * 100) / 100;
+  }
+
   // Fonction pour déterminer le step en fonction du produit
   function getStepForProduct(product: Product): string {
     // Utiliser quantity_increment du produit
@@ -242,13 +247,14 @@ export default function ProductList({ onAddToCart, cart }: ProductListProps) {
                             type="number"
                             min="0"
                             step={step}
-                            value={quantity === 0 ? '' : quantity}
+                            value={quantity === 0 ? '' : roundQuantity(quantity)}
                             onChange={(e) => {
                               const value = parseFloat(e.target.value) || 0;
                               const validatedValue = validateQuantity(product, value);
+                              const roundedValue = roundQuantity(validatedValue);
                               setQuantities(prev => {
                                 const newQuantities = new Map(prev);
-                                newQuantities.set(product.id, Math.max(0, validatedValue));
+                                newQuantities.set(product.id, Math.max(0, roundedValue));
                                 return newQuantities;
                               });
                             }}
@@ -256,9 +262,10 @@ export default function ProductList({ onAddToCart, cart }: ProductListProps) {
                               // Validation finale au blur pour s'assurer que la valeur respecte le step
                               const value = parseFloat(e.target.value) || 0;
                               const validatedValue = validateQuantity(product, value);
+                              const roundedValue = roundQuantity(validatedValue);
                               setQuantities(prev => {
                                 const newQuantities = new Map(prev);
-                                newQuantities.set(product.id, Math.max(0, validatedValue));
+                                newQuantities.set(product.id, Math.max(0, roundedValue));
                                 return newQuantities;
                               });
                             }}
@@ -275,7 +282,7 @@ export default function ProductList({ onAddToCart, cart }: ProductListProps) {
                         
                         {inCart && (
                           <div className="mt-2 text-sm text-farine-green font-medium text-center">
-                            ✓ Dans le panier: {cart.get(product.id)?.quantity} {formatUnitDisplay(product.unit_commande)}
+                            ✓ Dans le panier: {roundQuantity(cart.get(product.id)?.quantity || 0)} {formatUnitDisplay(product.unit_commande)}
                           </div>
                         )}
                       </div>
