@@ -263,7 +263,7 @@ export default function OrdersPage() {
       const row: any = {
         'Libellé Drive': product.libelle_drive || product.name,
         'Poids (kg)': product.weight_per_unit || '-',
-        'Unité': product.unit || 'unité',
+        'Unité': product.unit_production || 'unité',
       };
 
       // Ajouter les quantités pour chaque date
