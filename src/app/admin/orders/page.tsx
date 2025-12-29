@@ -205,104 +205,155 @@ export default function OrdersPage() {
     XLSX.writeFile(wb, `lignes_commandes_${new Date().toISOString().split('T')[0]}.xlsx`);
   }
 
-  async function exportProductionReport() {
-    const selectedOrdersList = orders.filter(o => selectedOrders.has(o.id));
-    const orderIds = selectedOrdersList.map(o => o.id);
+ async function exportProductionReport() {
+  const selectedOrdersList = orders.filter(o => selectedOrders.has(o.id));
 
-    if (orderIds.length === 0) {
-      alert('Veuillez sélectionner au moins une commande');
-      return;
-    }
-
-    // Récupérer TOUS les produits (actifs ou non) avec leur libellé Drive, unité et poids
-    const { data: allProducts } = await supabase
-      .from('products')
-      .select('id, name, libelle_drive, unit_production, weight_per_unit')
-      .order('name');
-
-    // Récupérer les lignes de commandes
-    const { data: items } = await supabase
-      .from('order_items')
-      .select('*, order:orders(pickup_date)')
-      .in('order_id', orderIds);
-
-    if (!items || items.length === 0) {
-      alert('Aucun produit dans les commandes sélectionnées');
-      return;
-    }
-
-    // Extraire toutes les dates uniques et les trier
-    const datesSet = new Set<string>();
-    items.forEach((item: any) => {
-      datesSet.add(item.order.pickup_date);
-    });
-    const sortedDates = Array.from(datesSet).sort();
-
-    // Générer TOUTES les dates entre la première et la dernière
-    const allDates: string[] = [];
-    if (sortedDates.length > 0) {
-      const startDate = new Date(sortedDates[0]);
-      const endDate = new Date(sortedDates[sortedDates.length - 1]);
-      
-      for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-        allDates.push(d.toISOString().split('T')[0]);
-      }
-    }
-
-    // Créer un Map pour agréger les quantités par produit et date
-    const quantityMap = new Map<string, number>();
-    items.forEach((item: any) => {
-      const key = `${item.product_name}_${item.order.pickup_date}`;
-      quantityMap.set(key, (quantityMap.get(key) || 0) + item.quantity);
-    });
-
-    // Construire le tableau croisé
-    const reportData: any[] = [];
-
-    allProducts?.forEach(product => {
-      const row: any = {
-        'Libellé Drive': product.libelle_drive || product.name,
-        'Poids (kg)': product.weight_per_unit || '-',
-        'Unité': product.unit_production || 'unité',
-      };
-
-      // Ajouter les quantités pour chaque date
-      allDates.forEach(date => {
-        const key = `${product.name}_${date}`;
-        const quantity = quantityMap.get(key) || 0;
-        const dateFormatted = new Date(date).toLocaleDateString('fr-FR', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric'
-        });
-        row[dateFormatted] = quantity || '-';
-      });
-
-      reportData.push(row);
-    });
-
-    // Créer le fichier Excel
-    const ws = XLSX.utils.json_to_sheet(reportData);
-    
-    // Ajuster la largeur des colonnes
-    const colWidths = [
-      { wch: 30 }, // Libellé Drive
-      { wch: 10 }, // Poids (kg)
-      { wch: 8 },  // Unité
-    ];
-    // Ajouter la largeur pour chaque date
-    allDates.forEach(() => {
-      colWidths.push({ wch: 12 });
-    });
-    ws['!cols'] = colWidths;
-
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Production');
-    
-    const filename = `rapport_production_${sortedDates[0]}_${sortedDates[sortedDates.length - 1]}.xlsx`;
-    XLSX.writeFile(wb, filename);
+  if (selectedOrdersList.length === 0) {
+    alert('Veuillez sélectionner au moins une commande');
+    return;
   }
 
+  // FILTRER : Exclure les commandes "Annulé" et "En suspens"
+  const validOrdersList = selectedOrdersList.filter(
+    order => order.status !== 'Annulé' && order.status !== 'En suspens'
+  );
+  const excludedOrdersList = selectedOrdersList.filter(
+    order => order.status === 'Annulé' || order.status === 'En suspens'
+  );
+
+  // Si aucune commande valide
+  if (validOrdersList.length === 0) {
+    alert('Aucune commande valide pour le rapport de production. Les commandes "Annulé" et "En suspens" sont exclues automatiquement.');
+    return;
+  }
+
+  // Informer si des commandes ont été exclues
+  if (excludedOrdersList.length > 0) {
+    const confirmMsg = `${excludedOrdersList.length} commande(s) avec statut "Annulé" ou "En suspens" seront exclues du rapport.\n\n${validOrdersList.length} commande(s) valide(s) vont être incluses.\n\nContinuer ?`;
+    if (!confirm(confirmMsg)) {
+      return;
+    }
+  }
+
+  const orderIds = validOrdersList.map(o => o.id);
+
+  // Récupérer TOUS les produits avec leurs unités et poids
+  const { data: allProducts } = await supabase
+    .from('products')
+    .select('id, name, libelle_drive, price_ttc, unit_commande, unit_production, weight_per_unit')
+    .order('name');
+
+  // VÉRIFICATION : Bloquer si un produit nécessite une conversion mais n'a pas de poids
+  const productsNeedingConversion = allProducts?.filter(
+    p => p.unit_production === 'kg' && p.unit_commande !== 'kg' && !p.weight_per_unit
+  ) || [];
+
+  if (productsNeedingConversion.length > 0) {
+    const productNames = productsNeedingConversion.map(p => `- ${p.name}`).join('\n');
+    alert(
+      `❌ ERREUR : Impossible de générer le rapport de production.\n\n` +
+      `Les produits suivants nécessitent une conversion (unité de production en kg) mais n'ont pas de poids unitaire défini :\n\n` +
+      `${productNames}\n\n` +
+      `Veuillez définir le poids unitaire (weight_per_unit) pour ces produits dans le back office.`
+    );
+    return;
+  }
+
+  // Récupérer les lignes de commandes
+  const { data: items } = await supabase
+    .from('order_items')
+    .select('*, order:orders(pickup_date)')
+    .in('order_id', orderIds);
+
+  if (!items || items.length === 0) {
+    alert('Aucun produit dans les commandes sélectionnées');
+    return;
+  }
+
+  // Extraire toutes les dates uniques et les trier
+  const datesSet = new Set<string>();
+  items.forEach((item: any) => {
+    datesSet.add(item.order.pickup_date);
+  });
+  const sortedDates = Array.from(datesSet).sort();
+
+  // Générer TOUTES les dates entre la première et la dernière
+  const allDates: string[] = [];
+  if (sortedDates.length > 0) {
+    const startDate = new Date(sortedDates[0]);
+    const endDate = new Date(sortedDates[sortedDates.length - 1]);
+    
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+      allDates.push(d.toISOString().split('T')[0]);
+    }
+  }
+
+  // Créer un Map pour agréger les quantités par produit et date
+  const quantityMap = new Map<string, number>();
+  items.forEach((item: any) => {
+    const key = `${item.product_name}_${item.order.pickup_date}`;
+    quantityMap.set(key, (quantityMap.get(key) || 0) + item.quantity);
+  });
+
+  // Construire le tableau croisé avec conversion des quantités
+  const reportData: any[] = [];
+
+  allProducts?.forEach(product => {
+    const row: any = {
+      'Libellé Drive': product.libelle_drive || product.name,
+      'Prix TTC (€)': product.price_ttc,
+      'Unité commande': product.unit_commande,
+      'Poids unitaire (kg)': product.weight_per_unit || '-',
+      'Unité production': product.unit_production,
+    };
+
+    // Ajouter les quantités pour chaque date avec conversion si nécessaire
+    allDates.forEach(date => {
+      const key = `${product.name}_${date}`;
+      let quantity = quantityMap.get(key) || 0;
+      
+      // CONVERSION : Si unit_production = kg et unit_commande ≠ kg
+      if (quantity > 0 && product.unit_production === 'kg' && product.unit_commande !== 'kg') {
+        // Multiplier par le poids unitaire (déjà vérifié qu'il existe)
+        quantity = quantity * (product.weight_per_unit || 0);
+        // Arrondir à 2 décimales
+        quantity = Math.round(quantity * 100) / 100;
+      }
+      
+      const dateFormatted = new Date(date).toLocaleDateString('fr-FR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+      row[dateFormatted] = quantity || '-';
+    });
+
+    reportData.push(row);
+  });
+
+  // Créer le fichier Excel
+  const ws = XLSX.utils.json_to_sheet(reportData);
+  
+  // Ajuster la largeur des colonnes
+  const colWidths = [
+    { wch: 30 }, // Libellé Drive
+    { wch: 12 }, // Prix TTC
+    { wch: 15 }, // Unité commande
+    { wch: 18 }, // Poids unitaire
+    { wch: 15 }, // Unité production
+  ];
+  // Ajouter la largeur pour chaque date
+  allDates.forEach(() => {
+    colWidths.push({ wch: 12 });
+  });
+  ws['!cols'] = colWidths;
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Production');
+  
+  const filename = `rapport_production_${sortedDates[0]}_${sortedDates[sortedDates.length - 1]}.xlsx`;
+  XLSX.writeFile(wb, filename);
+}
   async function exportOrdersToPDF() {
     if (selectedOrders.size === 0) {
       alert('Veuillez sélectionner au moins une commande');
