@@ -57,7 +57,7 @@ export default function ProductList({ onAddToCart, cart }: ProductListProps) {
 
       if (categoriesError) throw categoriesError;
 
-      // Récupérer les produits actifs AVEC le champ allow_half_quantity
+      // Récupérer les produits actifs AVEC quantity_increment
       const { data: productsData, error: productsError } = await supabase
         .from('products')
         .select('*')
@@ -109,29 +109,42 @@ export default function ProductList({ onAddToCart, cart }: ProductListProps) {
 
   // Fonction pour déterminer le step en fonction du produit
   function getStepForProduct(product: Product): string {
-    if (product.unit === 'kg') {
-      return '0.05'; // kg : 0,05 kg minimum (50 grammes)
-    } else if ((product as any).allow_half_quantity) {
-      return '0.5'; // unité avec demi autorisé : 0.5 minimum
-    } else {
-      return '1'; // unité standard : 1 minimum
-    }
+    // Utiliser quantity_increment du produit
+    return product.quantity_increment.toString();
   }
 
   // Fonction pour valider et arrondir la quantité selon le step
   function validateQuantity(product: Product, value: number): number {
     if (value <= 0) return 0;
     
-    if (product.unit === 'kg') {
-      // Pour kg : arrondir à 0,05 près (50 grammes)
-      return Math.round(value * 20) / 20;
-    } else if ((product as any).allow_half_quantity) {
-      // Pour unité avec demi : arrondir à 0.5 près
-      return Math.round(value * 2) / 2;
-    } else {
-      // Pour unité standard : arrondir à l'entier
-      return Math.round(value);
+    const increment = product.quantity_increment;
+    
+    // Arrondir au plus proche multiple de l'incrément
+    return Math.round(value / increment) * increment;
+  }
+
+  // Fonction pour formater l'affichage de l'unité
+  function formatUnitDisplay(unit: string): string {
+    switch(unit) {
+      case 'kg': return 'au kg';
+      case 'miche': return 'la miche';
+      case 'part': return 'la part';
+      case 'unité': return 'l\'unité';
+      default: return unit;
     }
+  }
+
+  // Fonction pour formater l'incrément pour l'affichage
+  function formatIncrementDisplay(increment: number): string {
+    if (increment === 1) return null; // Ne pas afficher si l'incrément est 1
+    if (increment < 1) {
+      // Afficher comme fraction si c'est 0.5, 0.25, 0.33, etc.
+      if (increment === 0.5) return 'Demi autorisé';
+      if (increment === 0.25) return 'Quart autorisé';
+      if (increment === 0.33 || increment === 0.333) return 'Tiers autorisé';
+      return `Commande par ${increment}`;
+    }
+    return `Commande par ${increment}`;
   }
 
   if (loading) {
@@ -182,8 +195,8 @@ export default function ProductList({ onAddToCart, cart }: ProductListProps) {
                   {categoryProducts.map(product => {
                     const quantity = quantities.get(product.id) || 0;
                     const inCart = cart.has(product.id);
-                    const allowHalf = (product as any).allow_half_quantity;
                     const step = getStepForProduct(product);
+                    const incrementDisplay = formatIncrementDisplay(product.quantity_increment);
 
                     return (
                       <div
@@ -213,11 +226,11 @@ export default function ProductList({ onAddToCart, cart }: ProductListProps) {
                           </span>
                           <div className="text-right">
                             <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded block">
-                              {product.unit === 'kg' ? 'au kg' : 'l\'unité'}
+                              {formatUnitDisplay(product.unit_commande)}
                             </span>
-                            {allowHalf && product.unit === 'unité' && (
+                            {incrementDisplay && (
                               <span className="text-xs text-green-600 mt-1 block">
-                                demi autorisé
+                                {incrementDisplay}
                               </span>
                             )}
                           </div>
@@ -262,7 +275,7 @@ export default function ProductList({ onAddToCart, cart }: ProductListProps) {
                         
                         {inCart && (
                           <div className="mt-2 text-sm text-farine-green font-medium text-center">
-                            ✓ Dans le panier: {cart.get(product.id)?.quantity} {product.unit === 'kg' ? 'kg' : 'unité(s)'}
+                            ✓ Dans le panier: {cart.get(product.id)?.quantity} {formatUnitDisplay(product.unit_commande)}
                           </div>
                         )}
                       </div>
