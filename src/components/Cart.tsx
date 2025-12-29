@@ -170,7 +170,7 @@ export default function Cart({ cart, onRemoveFromCart, onUpdateQuantity, onSubmi
               <div className="flex-1">
                 <h3 className="font-medium text-gray-800">{product.name}</h3>
                 <p className="text-sm text-gray-600">
-                  {formatPrice(product.price_ttc)} × {quantity} {product.unit === 'kg' ? 'kg' : 'unité(s)'}
+                  {formatPrice(product.price_ttc)} × {quantity} {product.unit_commande === 'kg' ? 'kg' : 'unité(s)'}
                 </p>
               </div>
               <div className="flex items-center gap-4">
