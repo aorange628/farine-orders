@@ -80,7 +80,8 @@ export interface Setting {
 export interface CreateProductInput {
   category_id: number;
   name: string;
-  unit: 'unité' | 'kg';
+  unit_b2c: 'unité' | 'kg' | 'miche';  // ← CORRIGÉ
+  unit_b2b: 'unité' | 'kg' | 'miche';  // ← AJOUTÉ
   price_ttc: number;
   description?: string;
   photo_url?: string;
