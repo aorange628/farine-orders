@@ -135,7 +135,7 @@ export default function ProductList({ onAddToCart, cart }: ProductListProps) {
   }
 
   // Fonction pour formater l'incrément pour l'affichage
-  function formatIncrementDisplay(increment: number): string {
+  function formatIncrementDisplay(increment: number): string | null {
     if (increment === 1) return null; // Ne pas afficher si l'incrément est 1
     if (increment < 1) {
       // Afficher comme fraction si c'est 0.5, 0.25, 0.33, etc.
