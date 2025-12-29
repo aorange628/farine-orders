@@ -15,12 +15,13 @@ export default function ProductsPage() {
   const [formData, setFormData] = useState({
     category_id: '',
     name: '',
-    unit: 'unité' as 'unité' | 'kg',
+    unit_commande: 'unité' as 'unité' | 'kg' | 'miche' | 'part',
+    unit_production: 'unité' as 'unité' | 'kg' | 'miche' | 'part',
+    quantity_increment: '1',
     price_ttc: '',
     description: '',
     libelle_drive: '',
     libelle_caisse: '',
-    allow_half_quantity: false,
     weight_per_unit: '',
   });
 
@@ -64,12 +65,13 @@ export default function ProductsPage() {
     setFormData({
       category_id: categories[0]?.id.toString() || '',
       name: '',
-      unit: 'unité',
+      unit_commande: 'unité',
+      unit_production: 'unité',
+      quantity_increment: '1',
       price_ttc: '',
       description: '',
       libelle_drive: '',
       libelle_caisse: '',
-      allow_half_quantity: false,
       weight_per_unit: '',
     });
     setShowModal(true);
@@ -80,13 +82,14 @@ export default function ProductsPage() {
     setFormData({
       category_id: product.category_id.toString(),
       name: product.name,
-      unit: product.unit,
+      unit_commande: product.unit_commande,
+      unit_production: product.unit_production,
+      quantity_increment: product.quantity_increment.toString(),
       price_ttc: product.price_ttc.toString(),
       description: product.description || '',
-      libelle_drive: (product as any).libelle_drive || '',
-      libelle_caisse: (product as any).libelle_caisse || '',
-      allow_half_quantity: (product as any).allow_half_quantity || false,
-      weight_per_unit: (product as any).weight_per_unit?.toString() || '',
+      libelle_drive: product.libelle_drive || '',
+      libelle_caisse: product.libelle_caisse || '',
+      weight_per_unit: product.weight_per_unit?.toString() || '',
     });
     setShowModal(true);
   }
@@ -97,12 +100,13 @@ export default function ProductsPage() {
     const productData = {
       category_id: parseInt(formData.category_id),
       name: formData.name,
-      unit: formData.unit,
+      unit_commande: formData.unit_commande,
+      unit_production: formData.unit_production,
+      quantity_increment: parseFloat(formData.quantity_increment),
       price_ttc: parseFloat(formData.price_ttc),
       description: formData.description || null,
       libelle_drive: formData.libelle_drive || null,
       libelle_caisse: formData.libelle_caisse || null,
-      allow_half_quantity: formData.allow_half_quantity,
       weight_per_unit: formData.weight_per_unit ? parseFloat(formData.weight_per_unit) : null,
     };
 
@@ -259,11 +263,12 @@ export default function ProductsPage() {
                   <tr>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Nom</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Prix TTC</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Unité</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Unité commande</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Unité production</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Poids (kg)</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Libellé Drive</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Libellé Caisse</th>
-                    <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">0,5 autorisé</th>
+                    <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">Incrément</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Statut</th>
                     <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">Actions</th>
                   </tr>
@@ -282,24 +287,21 @@ export default function ProductsPage() {
                         </div>
                       </td>
                       <td className="px-4 py-3 font-semibold">{formatPrice(product.price_ttc)}</td>
-                      <td className="px-4 py-3 text-sm">{product.unit}</td>
+                      <td className="px-4 py-3 text-sm">{product.unit_commande}</td>
+                      <td className="px-4 py-3 text-sm">{product.unit_production}</td>
                       <td className="px-4 py-3 text-sm text-gray-600">
-                        {(product as any).weight_per_unit ? `${(product as any).weight_per_unit} kg` : '-'}
+                        {product.weight_per_unit ? `${product.weight_per_unit} kg` : '-'}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600">
-                        {(product as any).libelle_drive || '-'}
+                        {product.libelle_drive || '-'}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600">
-                        {(product as any).libelle_caisse || '-'}
+                        {product.libelle_caisse || '-'}
                       </td>
                       <td className="px-4 py-3 text-center">
-                        {(product as any).allow_half_quantity ? (
-                          <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
-                            ✓ Oui
-                          </span>
-                        ) : (
-                          <span className="text-gray-400 text-xs">-</span>
-                        )}
+                        <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                          par {product.quantity_increment}
+                        </span>
                       </td>
                       <td className="px-4 py-3">
                         <button
@@ -420,7 +422,7 @@ export default function ProductsPage() {
                 />
               </div>
 
-              {/* Prix et Unité */}
+              {/* Prix et Incrément de quantité */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -438,16 +440,60 @@ export default function ProductsPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Unité <span className="text-red-500">*</span>
+                    Incrément de quantité <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    value={formData.quantity_increment}
+                    onChange={(e) => setFormData({ ...formData, quantity_increment: e.target.value })}
+                    placeholder="1"
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Ex: 0,1 / 0,25 / 0,5 / 1
+                  </p>
+                </div>
+              </div>
+
+              {/* Unités */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Unité de commande <span className="text-red-500">*</span>
                   </label>
                   <select
-                    value={formData.unit}
-                    onChange={(e) => setFormData({ ...formData, unit: e.target.value as 'unité' | 'kg' })}
+                    value={formData.unit_commande}
+                    onChange={(e) => setFormData({ ...formData, unit_commande: e.target.value as any })}
                     required
                   >
                     <option value="unité">unité</option>
                     <option value="kg">kg</option>
+                    <option value="miche">miche</option>
+                    <option value="part">part</option>
                   </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Ce que voit le client
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Unité de production <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={formData.unit_production}
+                    onChange={(e) => setFormData({ ...formData, unit_production: e.target.value as any })}
+                    required
+                  >
+                    <option value="unité">unité</option>
+                    <option value="kg">kg</option>
+                    <option value="miche">miche</option>
+                    <option value="part">part</option>
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Pour la fabrication
+                  </p>
                 </div>
               </div>
 
@@ -498,29 +544,6 @@ export default function ProductsPage() {
                   <p className="text-xs text-gray-500 mt-1">
                     Nom affiché sur la caisse
                   </p>
-                </div>
-              </div>
-
-              {/* Autoriser demi-quantités */}
-              <div className="border-t border-gray-200 pt-4">
-                <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
-                  <input
-                    type="checkbox"
-                    id="allow_half_quantity"
-                    checked={formData.allow_half_quantity}
-                    onChange={(e) => setFormData({ ...formData, allow_half_quantity: e.target.checked })}
-                    className="w-4 h-4 text-farine-green focus:ring-farine-green mt-1"
-                  />
-                  <div className="flex-1">
-                    <label htmlFor="allow_half_quantity" className="text-sm font-medium text-gray-900 cursor-pointer block">
-                      Autoriser les demi-quantités (0,5 unité)
-                    </label>
-                    <p className="text-xs text-gray-600 mt-1">
-                      Si coché, les clients pourront commander 0,5 / 1 / 1,5 / 2 unités, etc.
-                      <br />
-                      <span className="font-medium">Exemple :</span> Pain vendu à l'unité mais en demi aussi (1/2 miche)
-                    </p>
-                  </div>
                 </div>
               </div>
 
