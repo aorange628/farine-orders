@@ -348,7 +348,7 @@ export default function OrderDetailPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {items.map((item) => {
-                    const unit = item.product?.unit || 'unité';
+                    const unit = item.product?.unit_commande || 'unité';
                     return (
                       <tr key={item.id}>
                         <td className="px-4 py-3 font-medium">{item.product_name}</td>
