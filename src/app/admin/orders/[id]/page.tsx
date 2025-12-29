@@ -60,7 +60,7 @@ export default function OrderDetailPage() {
         .from('order_items')
         .select(`
           *,
-          product:products(unit)
+          product:products(unit_commande)
         `)
         .eq('order_id', orderId);
 
@@ -137,26 +137,32 @@ export default function OrderDetailPage() {
     window.print();
   }
 
-  // Fonction pour formater la quantité avec l'unité
-  function formatQuantityWithUnit(quantity: number, unit: string): string {
-    if (unit === 'kg') {
-      return `${quantity} kg`;
-    } else {
-      // Pour les unités, gérer le singulier/pluriel et les demi
-      if (quantity === 0.5) {
-        return '0,5 unité';
-      } else if (quantity === 1) {
-        return '1 unité';
-      } else if (quantity % 1 === 0.5) {
-        // Cas comme 1.5, 2.5, etc.
-        return `${quantity.toString().replace('.', ',')} unités`;
-      } else if (quantity > 1) {
-        return `${quantity} unités`;
-      } else {
-        return `${quantity} unité`;
-      }
-    }
+// Fonction pour formater la quantité avec l'unité
+function formatQuantityWithUnit(quantity: number, unit: string): string {
+  // Formater le nombre avec virgule pour l'affichage français
+  const formattedQty = quantity.toString().replace('.', ',');
+  
+  switch(unit) {
+    case 'kg':
+      return `${formattedQty} kg`;
+    
+    case 'miche':
+      if (quantity === 1) return '1 miche';
+      if (quantity === 0.5) return '0,5 miche';
+      return `${formattedQty} miches`;
+    
+    case 'part':
+      if (quantity === 1) return '1 part';
+      if (quantity === 0.5) return '0,5 part';
+      return `${formattedQty} parts`;
+    
+    case 'unité':
+    default:
+      if (quantity === 1) return '1 unité';
+      if (quantity === 0.5) return '0,5 unité';
+      return `${formattedQty} unités`;
   }
+}
 
   if (loading) {
     return (
