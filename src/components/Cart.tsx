@@ -22,6 +22,30 @@ export interface OrderFormData {
   customer_comment: string;
 }
 
+// Fonction helper pour arrondir proprement et éviter les erreurs de précision JavaScript
+function roundQuantity(value: number): number {
+  // Arrondir à 2 décimales pour éviter les erreurs type 2.300000000000003
+  return Math.round(value * 100) / 100;
+}
+
+// Fonction pour formater l'affichage de la quantité
+function formatQuantityDisplay(quantity: number, unit: string): string {
+  const rounded = roundQuantity(quantity);
+  const formatted = rounded.toString().replace('.', ',');
+  
+  switch(unit) {
+    case 'kg':
+      return `${formatted} kg`;
+    case 'miche':
+      return rounded === 1 ? '1 miche' : `${formatted} miches`;
+    case 'part':
+      return rounded === 1 ? '1 part' : `${formatted} parts`;
+    case 'unité':
+    default:
+      return rounded === 1 ? '1 unité' : `${formatted} unités`;
+  }
+}
+
 export default function Cart({ cart, onRemoveFromCart, onUpdateQuantity, onSubmitOrder }: CartProps) {
   const [formData, setFormData] = useState<OrderFormData>({
     customer_firstname: '',
@@ -170,7 +194,7 @@ export default function Cart({ cart, onRemoveFromCart, onUpdateQuantity, onSubmi
               <div className="flex-1">
                 <h3 className="font-medium text-gray-800">{product.name}</h3>
                 <p className="text-sm text-gray-600">
-                  {formatPrice(product.price_ttc)} × {quantity} {product.unit_commande === 'kg' ? 'kg' : 'unité(s)'}
+                  {formatPrice(product.price_ttc)} × {formatQuantityDisplay(quantity, product.unit_commande)}
                 </p>
               </div>
               <div className="flex items-center gap-4">
