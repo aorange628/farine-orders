@@ -19,8 +19,9 @@ export interface Product {
   id: number;
   category_id: number;
   name: string;
-  unit_commande: 'unité' | 'kg' | 'miche';  // ← Unité de commande (ce que le client voit)
-  unit_production: 'unité' | 'kg' | 'miche';  // ← Unité de production (pour la fabrication)
+  unit_commande: 'unité' | 'kg' | 'miche' | 'part';  // ← Ajout de 'part'
+  unit_production: 'unité' | 'kg' | 'miche' | 'part';  // ← Ajout de 'part'
+  quantity_increment: number;  // ← NOUVEAU (remplace allow_half_quantity)
   price_ttc: number;
   description: string | null;
   photo_url: string | null;
@@ -29,7 +30,6 @@ export interface Product {
   updated_at: string;
   libelle_drive?: string | null;
   libelle_caisse?: string | null;
-  allow_half_quantity?: boolean;
   weight_per_unit?: number | null;
   sort_order?: number;
 }
@@ -80,8 +80,9 @@ export interface Setting {
 export interface CreateProductInput {
   category_id: number;
   name: string;
-  unit_commande: 'unité' | 'kg' | 'miche';  // ← Unité de commande
-  unit_production: 'unité' | 'kg' | 'miche';  // ← Unité de production
+  unit_commande: 'unité' | 'kg' | 'miche' | 'part';
+  unit_production: 'unité' | 'kg' | 'miche' | 'part';
+  quantity_increment: number;  // ← NOUVEAU
   price_ttc: number;
   description?: string;
   photo_url?: string;
