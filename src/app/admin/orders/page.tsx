@@ -217,7 +217,7 @@ export default function OrdersPage() {
     // Récupérer TOUS les produits (actifs ou non) avec leur libellé Drive, unité et poids
     const { data: allProducts } = await supabase
       .from('products')
-      .select('id, name, libelle_drive, unit, weight_per_unit')
+      .select('id, name, libelle_drive, unit_production, weight_per_unit')
       .order('name');
 
     // Récupérer les lignes de commandes
