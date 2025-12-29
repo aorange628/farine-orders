@@ -19,8 +19,8 @@ export interface Product {
   id: number;
   category_id: number;
   name: string;
-  unit_b2c: 'unité' | 'kg' | 'miche';  // ← Ajout de 'miche'
-  unit_b2b: 'unité' | 'kg' | 'miche';  // ← Ajout de 'miche'
+  unit_commande: 'unité' | 'kg' | 'miche';  // ← Unité de commande (ce que le client voit)
+  unit_production: 'unité' | 'kg' | 'miche';  // ← Unité de production (pour la fabrication)
   price_ttc: number;
   description: string | null;
   photo_url: string | null;
@@ -80,8 +80,8 @@ export interface Setting {
 export interface CreateProductInput {
   category_id: number;
   name: string;
-  unit_b2c: 'unité' | 'kg' | 'miche';  // ← CORRIGÉ
-  unit_b2b: 'unité' | 'kg' | 'miche';  // ← AJOUTÉ
+  unit_commande: 'unité' | 'kg' | 'miche';  // ← Unité de commande
+  unit_production: 'unité' | 'kg' | 'miche';  // ← Unité de production
   price_ttc: number;
   description?: string;
   photo_url?: string;
@@ -125,8 +125,7 @@ export interface ProductionReport {
   product_name: string;
   category_name: string;
   total_quantity: number;
-  unit_b2c: string;
-  unit_b2b: string;
+  unit: string;
   pickup_date: string;
 }
 
