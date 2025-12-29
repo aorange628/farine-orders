@@ -21,6 +21,7 @@ export interface Product {
   name: string;
   unit_commande: 'unité' | 'kg' | 'miche' | 'part';  // ← Ajout de 'part'
   unit_production: 'unité' | 'kg' | 'miche' | 'part';  // ← Ajout de 'part'
+  unit_caisse: 'unité' | 'kg' | 'miche' | 'part';  // ← AJOUT
   quantity_increment: number;  // ← NOUVEAU (remplace allow_half_quantity)
   price_ttc: number;
   description: string | null;
@@ -82,6 +83,7 @@ export interface CreateProductInput {
   name: string;
   unit_commande: 'unité' | 'kg' | 'miche' | 'part';
   unit_production: 'unité' | 'kg' | 'miche' | 'part';
+  unit_caisse: 'unité' | 'kg' | 'miche' | 'part';  // ← AJOUT
   quantity_increment: number;  // ← NOUVEAU
   price_ttc: number;
   description?: string;
