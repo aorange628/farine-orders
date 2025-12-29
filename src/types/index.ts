@@ -19,7 +19,8 @@ export interface Product {
   id: number;
   category_id: number;
   name: string;
-  unit: 'unité' | 'kg';
+  unit_b2c: 'unité' | 'kg' | 'miche';  // ← Ajout de 'miche'
+  unit_b2b: 'unité' | 'kg' | 'miche';  // ← Ajout de 'miche'
   price_ttc: number;
   description: string | null;
   photo_url: string | null;
