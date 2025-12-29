@@ -17,6 +17,7 @@ export default function ProductsPage() {
     name: '',
     unit_commande: 'unité' as 'unité' | 'kg' | 'miche' | 'part',
     unit_production: 'unité' as 'unité' | 'kg' | 'miche' | 'part',
+    unit_caisse: 'unité' as 'unité' | 'kg' | 'miche' | 'part',
     quantity_increment: '1',
     price_ttc: '',
     description: '',
@@ -67,6 +68,7 @@ export default function ProductsPage() {
       name: '',
       unit_commande: 'unité',
       unit_production: 'unité',
+      unit_caisse: 'unité',
       quantity_increment: '1',
       price_ttc: '',
       description: '',
@@ -84,6 +86,7 @@ export default function ProductsPage() {
       name: product.name,
       unit_commande: product.unit_commande,
       unit_production: product.unit_production,
+      unit_caisse: product.unit_caisse,
       quantity_increment: product.quantity_increment.toString(),
       price_ttc: product.price_ttc.toString(),
       description: product.description || '',
@@ -102,6 +105,7 @@ export default function ProductsPage() {
       name: formData.name,
       unit_commande: formData.unit_commande,
       unit_production: formData.unit_production,
+      unit_caisse: formData.unit_caisse,
       quantity_increment: parseFloat(formData.quantity_increment),
       price_ttc: parseFloat(formData.price_ttc),
       description: formData.description || null,
@@ -263,8 +267,9 @@ export default function ProductsPage() {
                   <tr>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Nom</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Prix TTC</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Unité commande</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Unité production</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">U. commande</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">U. production</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">U. caisse</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Poids (kg)</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Libellé Drive</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Libellé Caisse</th>
@@ -289,6 +294,7 @@ export default function ProductsPage() {
                       <td className="px-4 py-3 font-semibold">{formatPrice(product.price_ttc)}</td>
                       <td className="px-4 py-3 text-sm">{product.unit_commande}</td>
                       <td className="px-4 py-3 text-sm">{product.unit_production}</td>
+                      <td className="px-4 py-3 text-sm">{product.unit_caisse}</td>
                       <td className="px-4 py-3 text-sm text-gray-600">
                         {product.weight_per_unit ? `${product.weight_per_unit} kg` : '-'}
                       </td>
@@ -457,8 +463,8 @@ export default function ProductsPage() {
                 </div>
               </div>
 
-              {/* Unités */}
-              <div className="grid grid-cols-2 gap-4">
+              {/* Unités - 3 colonnes */}
+              <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Unité de commande <span className="text-red-500">*</span>
@@ -493,6 +499,24 @@ export default function ProductsPage() {
                   </select>
                   <p className="text-xs text-gray-500 mt-1">
                     Pour la fabrication
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Unité caisse <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={formData.unit_caisse}
+                    onChange={(e) => setFormData({ ...formData, unit_caisse: e.target.value as any })}
+                    required
+                  >
+                    <option value="unité">unité</option>
+                    <option value="kg">kg</option>
+                    <option value="miche">miche</option>
+                    <option value="part">part</option>
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Pour l'encaissement
                   </p>
                 </div>
               </div>
