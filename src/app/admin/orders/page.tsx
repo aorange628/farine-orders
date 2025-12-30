@@ -207,13 +207,13 @@ export default function OrdersPage() {
 
   // Récupérer les lignes de commandes AVEC les données produit nécessaires
   const { data: items } = await supabase
-    .from('order_items')
-    .select(`
-      *,
-      order:orders(order_number, customer_firstname, customer_name, pickup_date, pickup_time),
-      product:products(libelle_caisse, unit_caisse, unit_commande, weight_per_unit)
-    `)
-    .in('order_id', orderIds);
+  .from('order_items')
+  .select(`
+    *,
+    order:orders(order_number, customer_firstname, customer_name, pickup_date, pickup_time, customer_comment),
+    product:products(libelle_caisse, unit_caisse, unit_commande, weight_per_unit)
+  `)
+  .in('order_id', orderIds);
 
   if (!items || items.length === 0) {
     alert('Aucun produit dans les commandes sélectionnées');
@@ -235,16 +235,17 @@ export default function OrdersPage() {
       }
     }
 
-    return {
-      'N° Commande': item.order.order_number,
-      'Client': `${item.order.customer_firstname || ''} ${item.order.customer_name}`.trim(),
-      'Date enlèvement': new Date(item.order.pickup_date).toLocaleDateString('fr-FR'),
-      'Heure enlèvement': item.order.pickup_time,
-      'Produit': item.product?.libelle_caisse || item.product_name,
-      'Quantité': quantity,
-      'Unité': unitCaisse,
-      'Sous-total': item.subtotal_ttc,
-    };
+   return {
+  'N° Commande': item.order.order_number,
+  'Client': `${item.order.customer_firstname || ''} ${item.order.customer_name}`.trim(),
+  'Date enlèvement': new Date(item.order.pickup_date).toLocaleDateString('fr-FR'),
+  'Heure enlèvement': item.order.pickup_time,
+  'Produit': item.product?.libelle_caisse || item.product_name,
+  'Quantité': quantity,
+  'Unité': unitCaisse,
+  'Commentaire client': item.order.customer_comment || '',
+  'Sous-total': item.subtotal_ttc,
+};
   });
 
   const ws = XLSX.utils.json_to_sheet(data);
