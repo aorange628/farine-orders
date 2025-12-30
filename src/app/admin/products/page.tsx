@@ -304,12 +304,7 @@ export default function ProductsPage() {
                       <td className="px-4 py-3 text-sm text-gray-600">
                         {product.weight_per_unit ? `${product.weight_per_unit} kg` : '-'}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">
-                        {product.libelle_drive || '-'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">
-                        {product.libelle_caisse || '-'}
-                      </td>
+                      
                       <td className="px-4 py-3 text-center">
                         <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
                           par {product.quantity_increment}
