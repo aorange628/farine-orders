@@ -479,9 +479,9 @@ const { data: allProducts } = await supabase
     'Libellé Drive': product.libelle_drive || product.name,
     'Prix TTC (€)': product.price_ttc,
     'Unité commande': product.unit_commande,
-    'Poids unitaire (kg)': product.weight_per_unit || '-',
+    'Poids unitaire (kg)': product.weight_per_unit || '',
     'Unité production': product.unit_production,
-    'Qté batch': product.quantity_batch_production || '-',
+    'Qté batch': product.quantity_batch_production || '',
     'Unité caisse': product.unit_caisse,
   };
 
