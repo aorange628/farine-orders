@@ -416,7 +416,7 @@ if (group.rows.length > 1) {
   // Récupérer TOUS les produits avec leurs unités et poids
 const { data: allProducts } = await supabase
   .from('products')
-  .select('id, name, libelle_drive, price_ttc, unit_commande, unit_production, quantity_batch_production, weight_per_unit')
+  .select('id, name, libelle_drive, price_ttc, unit_commande, unit_production, quantity_batch_production, unit_caisse, weight_per_unit')
   .order('name');
 
   // VÉRIFICATION : Bloquer si un produit nécessite une conversion mais n'a pas de poids
@@ -479,9 +479,10 @@ const { data: allProducts } = await supabase
     'Libellé Drive': product.libelle_drive || product.name,
     'Prix TTC (€)': product.price_ttc,
     'Unité commande': product.unit_commande,
-    'Poids unitaire (kg)': product.weight_per_unit || '',
+    'Poids unitaire (kg)': product.weight_per_unit || '-',
     'Unité production': product.unit_production,
-    'Qté batch': product.quantity_batch_production || '',
+    'Qté batch': product.quantity_batch_production || '-',
+    'Unité caisse': product.unit_caisse,
   };
 
     // Ajouter les quantités pour chaque date avec conversion si nécessaire
@@ -519,6 +520,7 @@ const colWidths = [
   { wch: 18 }, // Poids unitaire
   { wch: 15 }, // Unité production
   { wch: 10 }, // Qté batch
+  { wch: 12 }, // Unité caisse
 ];
   // Ajouter la largeur pour chaque date
   allDates.forEach(() => {
