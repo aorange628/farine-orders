@@ -213,7 +213,8 @@ export default function OrdersPage() {
       order:orders(order_number, customer_firstname, customer_name, pickup_date, pickup_time, customer_comment),
       product:products(libelle_caisse, unit_caisse, unit_commande, weight_per_unit)
     `)
-    .in('order_id', orderIds);
+    .in('order_id', orderIds)
+    .order('order_id'); // Important : trier par order_id pour grouper
 
   if (!items || items.length === 0) {
     alert('Aucun produit dans les commandes sélectionnées');
@@ -221,8 +222,8 @@ export default function OrdersPage() {
   }
 
   const data = (items || []).map((item: any) => {
-    const quantityOriginal = item.quantity; // Quantité commandée (non convertie)
-    let quantityConverted = item.quantity; // Quantité pour caisse (convertie)
+    const quantityOriginal = item.quantity;
+    let quantityConverted = item.quantity;
     const unitCaisse = item.product?.unit_caisse || 'unité';
     const unitCommande = item.product?.unit_commande || 'unité';
     const weightPerUnit = item.product?.weight_per_unit;
@@ -231,28 +232,150 @@ export default function OrdersPage() {
     if (unitCaisse === 'kg' && unitCommande !== 'kg') {
       if (weightPerUnit) {
         quantityConverted = quantityConverted * weightPerUnit;
-        // Arrondir à 2 décimales
         quantityConverted = Math.round(quantityConverted * 100) / 100;
       }
     }
 
     return {
-  'N° Commande': item.order.order_number,
-  'Client': `${item.order.customer_firstname || ''} ${item.order.customer_name}`.trim(),
-  'Date enlèvement': new Date(item.order.pickup_date).toLocaleDateString('fr-FR'),
-  'Heure enlèvement': item.order.pickup_time,
-  'Produit': item.product?.libelle_caisse || item.product_name,
-  'Quantité caisse': quantityConverted,
-  'Unité caisse': unitCaisse,
-  'Commentaire client': item.order.customer_comment || '',
-  'Unité commande': unitCommande,
-  'Quantité commandée': quantityOriginal,
-  'Poids unitaire (kg)': weightPerUnit || '-',
-  'Sous-total': item.subtotal_ttc,
-};
+      'N° Commande': item.order.order_number,
+      'Client': `${item.order.customer_firstname || ''} ${item.order.customer_name}`.trim(),
+      'Date enlèvement': new Date(item.order.pickup_date).toLocaleDateString('fr-FR'),
+      'Heure enlèvement': item.order.pickup_time,
+      'Produit': item.product?.libelle_caisse || item.product_name,
+      'Quantité caisse': quantityConverted,
+      'Unité caisse': unitCaisse,
+      'Commentaire client': item.order.customer_comment || '',
+      'Unité commande': unitCommande,
+      'Quantité commandée': quantityOriginal,
+      'Poids unitaire (kg)': weightPerUnit || '-',
+      'Sous-total': item.subtotal_ttc,
+      _orderId: item.order_id, // Garder l'ID pour grouper
+    };
   });
 
   const ws = XLSX.utils.json_to_sheet(data);
+
+  // Supprimer la colonne temporaire _orderId de l'affichage
+  const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+  for (let R = range.s.r; R <= range.e.r; ++R) {
+    delete ws[XLSX.utils.encode_cell({ r: R, c: 12 })];
+  }
+  range.e.c = 11;
+  ws['!ref'] = XLSX.utils.encode_range(range);
+
+  // Calculer les fusions de cellules ET les groupes de commandes
+  const merges: any[] = [];
+  const orderGroups: { startRow: number; endRow: number; colorIndex: number }[] = [];
+  let currentOrderId = null;
+  let startRow = 1;
+  let rowCount = 0;
+  let colorIndex = 0;
+
+  data.forEach((item: any, index: number) => {
+    if (currentOrderId !== item._orderId) {
+      // Si on change de commande et qu'on avait des lignes précédentes
+      if (currentOrderId !== null && rowCount > 0) {
+        const endRow = startRow + rowCount - 1;
+        
+        // Enregistrer le groupe de commande pour la couleur
+        orderGroups.push({ startRow, endRow, colorIndex: colorIndex % 2 });
+        
+        if (rowCount > 1) {
+          // Fusionner les colonnes
+          merges.push(
+            { s: { r: startRow, c: 0 }, e: { r: endRow, c: 0 } }, // N° Commande
+            { s: { r: startRow, c: 1 }, e: { r: endRow, c: 1 } }, // Client
+            { s: { r: startRow, c: 2 }, e: { r: endRow, c: 2 } }, // Date enlèvement
+            { s: { r: startRow, c: 3 }, e: { r: endRow, c: 3 } }, // Heure enlèvement
+            { s: { r: startRow, c: 7 }, e: { r: endRow, c: 7 } }  // Commentaire client
+          );
+        }
+        
+        colorIndex++;
+      }
+      
+      currentOrderId = item._orderId;
+      startRow = index + 1;
+      rowCount = 1;
+    } else {
+      rowCount++;
+    }
+  });
+
+  // Traiter la dernière commande
+  if (rowCount > 0) {
+    const endRow = startRow + rowCount - 1;
+    orderGroups.push({ startRow, endRow, colorIndex: colorIndex % 2 });
+    
+    if (rowCount > 1) {
+      merges.push(
+        { s: { r: startRow, c: 0 }, e: { r: endRow, c: 0 } },
+        { s: { r: startRow, c: 1 }, e: { r: endRow, c: 1 } },
+        { s: { r: startRow, c: 2 }, e: { r: endRow, c: 2 } },
+        { s: { r: startRow, c: 3 }, e: { r: endRow, c: 3 } },
+        { s: { r: startRow, c: 7 }, e: { r: endRow, c: 7 } }
+      );
+    }
+  }
+
+  // Appliquer les fusions
+  ws['!merges'] = merges;
+
+  // Appliquer les styles : alignement + couleurs alternées par commande
+  const colors = [
+    { fgColor: { rgb: "FFFFFF" } }, // Blanc
+    { fgColor: { rgb: "F0F0F0" } }  // Gris clair
+  ];
+
+  // Style de base : alignement gauche et haut
+  const baseStyle = {
+    alignment: {
+      horizontal: "left",
+      vertical: "top",
+      wrapText: true
+    }
+  };
+
+  // Appliquer les styles à toutes les cellules
+  for (let R = range.s.r; R <= range.e.r; ++R) {
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+      const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+      if (!ws[cellAddress]) continue;
+
+      // Trouver la couleur de la commande pour cette ligne
+      let fillColor = colors[0]; // Par défaut blanc
+      if (R > 0) { // Ignorer la ligne d'en-tête
+        const group = orderGroups.find(g => R >= g.startRow && R <= g.endRow);
+        if (group) {
+          fillColor = colors[group.colorIndex];
+        }
+      }
+
+      // Appliquer le style
+      ws[cellAddress].s = {
+        ...baseStyle,
+        fill: R === 0 ? { fgColor: { rgb: "D3D3D3" } } : fillColor, // En-tête en gris foncé
+        font: R === 0 ? { bold: true } : undefined // En-tête en gras
+      };
+    }
+  }
+
+  // Ajuster la largeur des colonnes
+  ws['!cols'] = [
+    { wch: 12 },  // N° Commande
+    { wch: 20 },  // Client
+    { wch: 12 },  // Date enlèvement
+    { wch: 12 },  // Heure enlèvement
+    { wch: 30 },  // Produit
+    { wch: 12 },  // Quantité caisse
+    { wch: 12 },  // Unité caisse
+    { wch: 30 },  // Commentaire client
+    { wch: 15 },  // Unité commande
+    { wch: 15 },  // Quantité commandée
+    { wch: 18 },  // Poids unitaire
+    { wch: 12 },  // Sous-total
+  ];
+
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Caisse');
   XLSX.writeFile(wb, `export_caisse_${new Date().toISOString().split('T')[0]}.xlsx`);
