@@ -304,46 +304,50 @@ export default function OrdersPage() {
     }
 
     // Ajouter les données et appliquer les styles
-    let colorIndex = 0;
-    const colors = ['FFFFFFFF', 'FFF0F0F0']; // Blanc, Gris clair
+let colorIndex = 0;
+const colors = ['FFFFFFFF', 'FFF0F0F0']; // Blanc, Gris clair
 
-    orderGroups.forEach(group => {
-      const startRow = group.startRow;
-      const color = colors[colorIndex % 2];
+orderGroups.forEach(group => {
+  const color = colors[colorIndex % 2];
+  let firstRowNumber = 0;
 
-group.rows.forEach((rowData) => {
-  const row = worksheet.addRow(rowData);
+  group.rows.forEach((rowData, index) => {
+    const row = worksheet.addRow(rowData);
+    
+    // Capturer le numéro de la première ligne du groupe
+    if (index === 0) {
+      firstRowNumber = row.number;
+    }
 
-  // Appliquer la couleur de fond
-  row.eachCell((cell) => {
-    cell.fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: color }
-    };
-    cell.alignment = { vertical: 'top', horizontal: 'left', wrapText: true };
-    cell.border = {
-      top: { style: 'thin', color: { argb: 'FFD0D0D0' } },
-      left: { style: 'thin', color: { argb: 'FFD0D0D0' } },
-      bottom: { style: 'thin', color: { argb: 'FFD0D0D0' } },
-      right: { style: 'thin', color: { argb: 'FFD0D0D0' } }
-    };
-  });
-});
-
-// Fusionner les cellules APRÈS avoir ajouté toutes les lignes du groupe
-if (group.rows.length > 1) {
-  const endRow = startRow + group.rows.length - 1;
-  worksheet.mergeCells(startRow, 1, endRow, 1); // N° Commande
-  worksheet.mergeCells(startRow, 2, endRow, 2); // Client
-  worksheet.mergeCells(startRow, 3, endRow, 3); // Date
-  worksheet.mergeCells(startRow, 4, endRow, 4); // Heure
-  worksheet.mergeCells(startRow, 8, endRow, 8); // Commentaire
-}
-
-      colorIndex++;
+    // Appliquer la couleur de fond
+    row.eachCell((cell) => {
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: color }
+      };
+      cell.alignment = { vertical: 'top', horizontal: 'left', wrapText: true };
+      cell.border = {
+        top: { style: 'thin', color: { argb: 'FFD0D0D0' } },
+        left: { style: 'thin', color: { argb: 'FFD0D0D0' } },
+        bottom: { style: 'thin', color: { argb: 'FFD0D0D0' } },
+        right: { style: 'thin', color: { argb: 'FFD0D0D0' } }
+      };
     });
+  });
 
+  // Fusionner les cellules APRÈS avoir ajouté toutes les lignes du groupe
+  if (group.rows.length > 1) {
+    const endRowNumber = firstRowNumber + group.rows.length - 1;
+    worksheet.mergeCells(firstRowNumber, 1, endRowNumber, 1); // N° Commande
+    worksheet.mergeCells(firstRowNumber, 2, endRowNumber, 2); // Client
+    worksheet.mergeCells(firstRowNumber, 3, endRowNumber, 3); // Date
+    worksheet.mergeCells(firstRowNumber, 4, endRowNumber, 4); // Heure
+    worksheet.mergeCells(firstRowNumber, 8, endRowNumber, 8); // Commentaire
+  }
+
+  colorIndex++;
+});
     // Générer le fichier
     const buffer = await workbook.xlsx.writeBuffer();
     const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
