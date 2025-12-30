@@ -217,13 +217,37 @@ export default function OrdersPage() {
   .in('order_id', orderIds)
   .order('order_id');
 
-    if (!items || items.length === 0) {
-      alert('Aucun produit dans les commandes sélectionnées');
-      return;
-    }
+   if (!items || items.length === 0) {
+  alert('Aucun produit dans les commandes sélectionnées');
+  return;
+}
 
-    // Créer un workbook ExcelJS
-    const workbook = new ExcelJS.Workbook();
+// VÉRIFICATION : Bloquer si un produit nécessite une conversion mais n'a pas de poids
+const productsNeedingWeight = items.filter((item: any) => {
+  const unitCaisse = item.product?.unit_caisse || 'unité';
+  const unitCommande = item.product?.unit_commande || 'unité';
+  const weightPerUnit = item.product?.weight_per_unit;
+  
+  // Nécessite conversion mais pas de poids
+  return unitCaisse === 'kg' && unitCommande !== 'kg' && !weightPerUnit;
+});
+
+if (productsNeedingWeight.length > 0) {
+  // Récupérer les noms de produits uniques
+  const uniqueProducts = [...new Set(productsNeedingWeight.map((item: any) => item.product_name))];
+  const productNames = uniqueProducts.map(name => `- ${name}`).join('\n');
+  
+  alert(
+    `❌ ERREUR : Impossible de générer l'export caisse.\n\n` +
+    `Les produits suivants nécessitent une conversion (unité caisse en kg) mais n'ont pas de poids unitaire défini :\n\n` +
+    `${productNames}\n\n` +
+    `Veuillez définir le poids unitaire (weight_per_unit) pour ces produits dans le back office.`
+  );
+  return;
+}
+
+// Créer un workbook ExcelJS
+const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Caisse');
 
     // Définir les colonnes
