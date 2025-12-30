@@ -414,10 +414,10 @@ if (group.rows.length > 1) {
   const orderIds = validOrdersList.map(o => o.id);
 
   // Récupérer TOUS les produits avec leurs unités et poids
-  const { data: allProducts } = await supabase
-    .from('products')
-    .select('id, name, libelle_drive, price_ttc, unit_commande, unit_production, weight_per_unit')
-    .order('name');
+const { data: allProducts } = await supabase
+  .from('products')
+  .select('id, name, libelle_drive, price_ttc, unit_commande, unit_production, quantity_batch_production, weight_per_unit')
+  .order('name');
 
   // VÉRIFICATION : Bloquer si un produit nécessite une conversion mais n'a pas de poids
   const productsNeedingConversion = allProducts?.filter(
@@ -475,13 +475,14 @@ if (group.rows.length > 1) {
   const reportData: any[] = [];
 
   allProducts?.forEach(product => {
-    const row: any = {
-      'Libellé Drive': product.libelle_drive || product.name,
-      'Prix TTC (€)': product.price_ttc,
-      'Unité commande': product.unit_commande,
-      'Poids unitaire (kg)': product.weight_per_unit || '-',
-      'Unité production': product.unit_production,
-    };
+  const row: any = {
+    'Libellé Drive': product.libelle_drive || product.name,
+    'Prix TTC (€)': product.price_ttc,
+    'Unité commande': product.unit_commande,
+    'Poids unitaire (kg)': product.weight_per_unit || '-',
+    'Unité production': product.unit_production,
+    'Qté batch': product.quantity_batch_production || '-',
+  };
 
     // Ajouter les quantités pour chaque date avec conversion si nécessaire
     allDates.forEach(date => {
@@ -511,13 +512,14 @@ if (group.rows.length > 1) {
   const ws = XLSX.utils.json_to_sheet(reportData);
   
   // Ajuster la largeur des colonnes
-  const colWidths = [
-    { wch: 30 }, // Libellé Drive
-    { wch: 12 }, // Prix TTC
-    { wch: 15 }, // Unité commande
-    { wch: 18 }, // Poids unitaire
-    { wch: 15 }, // Unité production
-  ];
+const colWidths = [
+  { wch: 30 }, // Libellé Drive
+  { wch: 12 }, // Prix TTC
+  { wch: 15 }, // Unité commande
+  { wch: 18 }, // Poids unitaire
+  { wch: 15 }, // Unité production
+  { wch: 10 }, // Qté batch
+];
   // Ajouter la largeur pour chaque date
   allDates.forEach(() => {
     colWidths.push({ wch: 12 });
