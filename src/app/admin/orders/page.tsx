@@ -234,7 +234,7 @@ const productsNeedingWeight = items.filter((item: any) => {
 
 if (productsNeedingWeight.length > 0) {
   // Récupérer les noms de produits uniques
-  const uniqueProducts = [...new Set(productsNeedingWeight.map((item: any) => item.product_name))];
+  const uniqueProducts = Array.from(new Set(productsNeedingWeight.map((item: any) => item.product_name)));
   const productNames = uniqueProducts.map(name => `- ${name}`).join('\n');
   
   alert(
