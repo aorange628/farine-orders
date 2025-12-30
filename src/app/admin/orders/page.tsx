@@ -20,6 +20,23 @@ import Link from 'next/link';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 
+// Fonction pour obtenir le lundi de la semaine en cours
+function getMondayOfCurrentWeek(): string {
+  const today = new Date();
+  const day = today.getDay(); // 0 = dimanche, 1 = lundi, etc.
+  const diff = day === 0 ? -6 : 1 - day; // Si dimanche, revenir à lundi précédent
+  const monday = new Date(today);
+  monday.setDate(today.getDate() + diff);
+  return monday.toISOString().split('T')[0];
+}
+
+// Fonction pour ajouter des jours à une date
+function addDays(dateString: string, days: number): string {
+  const date = new Date(dateString);
+  date.setDate(date.getDate() + days);
+  return date.toISOString().split('T')[0];
+}
+
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [statuses, setStatuses] = useState<OrderStatus[]>([]);
@@ -30,13 +47,13 @@ export default function OrdersPage() {
   
   // Filtres
   const [filters, setFilters] = useState({
-    search: '',
-    status: '',
-    pickupDateFrom: '',
-    pickupDateTo: '',
-    createdDateFrom: '',
-    createdDateTo: '',
-  });
+  search: '',
+  status: '',
+  pickupDateFrom: getMondayOfCurrentWeek(),
+  pickupDateTo: addDays(getMondayOfCurrentWeek(), 30),
+  createdDateFrom: '',
+  createdDateTo: '',
+});
 
   useEffect(() => {
     fetchData();
