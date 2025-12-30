@@ -208,14 +208,14 @@ export default function OrdersPage() {
 
     // Récupérer les lignes de commandes
     const { data: items } = await supabase
-      .from('order_items')
-      .select(`
-        *,
-        order:orders(order_number, customer_firstname, customer_name, pickup_date, pickup_time, customer_comment),
-        product:products(libelle_caisse, unit_caisse, unit_commande, weight_per_unit)
-      `)
-      .in('order_id', orderIds)
-      .order('order_id');
+  .from('order_items')
+  .select(`
+    *,
+    order:orders(order_number, customer_firstname, customer_name, customer_phone, pickup_date, pickup_time, customer_comment),
+    product:products(libelle_caisse, unit_caisse, unit_commande, weight_per_unit)
+  `)
+  .in('order_id', orderIds)
+  .order('order_id');
 
     if (!items || items.length === 0) {
       alert('Aucun produit dans les commandes sélectionnées');
@@ -270,19 +270,20 @@ export default function OrdersPage() {
       }
 
       const rowData = {
-        orderNumber: item.order.order_number,
-        client: `${item.order.customer_firstname || ''} ${item.order.customer_name}`.trim(),
-        pickupDate: new Date(item.order.pickup_date).toLocaleDateString('fr-FR'),
-        pickupTime: item.order.pickup_time,
-        product: item.product?.libelle_caisse || item.product_name,
-        quantityCaisse: quantityConverted,
-        unitCaisse: unitCaisse,
-        comment: item.order.customer_comment || '',
-        unitCommande: unitCommande,
-        quantityOriginal: quantityOriginal,
-        weight: weightPerUnit || '-',
-        subtotal: item.subtotal_ttc,
-      };
+  orderNumber: item.order.order_number,
+  client: `${item.order.customer_firstname || ''} ${item.order.customer_name}`.trim(),
+  phone: item.order.customer_phone,
+  pickupDate: new Date(item.order.pickup_date).toLocaleDateString('fr-FR'),
+  pickupTime: item.order.pickup_time,
+  product: item.product?.libelle_caisse || item.product_name,
+  quantityCaisse: quantityConverted,
+  unitCaisse: unitCaisse,
+  comment: item.order.customer_comment || '',
+  unitCommande: unitCommande,
+  quantityOriginal: quantityOriginal,
+  weight: weightPerUnit || '-',
+  subtotal: item.subtotal_ttc,
+};
 
       if (currentOrderId !== item.order_id) {
         // Nouvelle commande
@@ -340,7 +341,7 @@ orderGroups.forEach(group => {
  // Fusionner SEULEMENT les cellules de commentaire
 if (group.rows.length > 1) {
   const endRowNumber = firstRowNumber + group.rows.length - 1;
-  worksheet.mergeCells(firstRowNumber, 8, endRowNumber, 8); // Commentaire client
+  worksheet.mergeCells(firstRowNumber, 9, endRowNumber, 9); // Commentaire client (colonne 9 maintenant)
 }
   
   colorIndex++;
