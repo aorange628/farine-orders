@@ -276,8 +276,6 @@ export default function ProductsPage() {
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Qté batch</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">U. caisse</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Poids (kg)</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Libellé Drive</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Libellé Caisse</th>
                     <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">Incrément</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Statut</th>
                     <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">Actions</th>
