@@ -207,13 +207,13 @@ export default function OrdersPage() {
 
   // Récupérer les lignes de commandes AVEC les données produit nécessaires
   const { data: items } = await supabase
-  .from('order_items')
-  .select(`
-    *,
-    order:orders(order_number, customer_firstname, customer_name, pickup_date, pickup_time, customer_comment),
-    product:products(libelle_caisse, unit_caisse, unit_commande, weight_per_unit)
-  `)
-  .in('order_id', orderIds);
+    .from('order_items')
+    .select(`
+      *,
+      order:orders(order_number, customer_firstname, customer_name, pickup_date, pickup_time, customer_comment),
+      product:products(libelle_caisse, unit_caisse, unit_commande, weight_per_unit)
+    `)
+    .in('order_id', orderIds);
 
   if (!items || items.length === 0) {
     alert('Aucun produit dans les commandes sélectionnées');
@@ -221,7 +221,8 @@ export default function OrdersPage() {
   }
 
   const data = (items || []).map((item: any) => {
-    let quantity = item.quantity;
+    const quantityOriginal = item.quantity; // Quantité commandée (non convertie)
+    let quantityConverted = item.quantity; // Quantité pour caisse (convertie)
     const unitCaisse = item.product?.unit_caisse || 'unité';
     const unitCommande = item.product?.unit_commande || 'unité';
     const weightPerUnit = item.product?.weight_per_unit;
@@ -229,23 +230,26 @@ export default function OrdersPage() {
     // CONVERSION : Si unit_caisse = kg et unit_commande ≠ kg
     if (unitCaisse === 'kg' && unitCommande !== 'kg') {
       if (weightPerUnit) {
-        quantity = quantity * weightPerUnit;
+        quantityConverted = quantityConverted * weightPerUnit;
         // Arrondir à 2 décimales
-        quantity = Math.round(quantity * 100) / 100;
+        quantityConverted = Math.round(quantityConverted * 100) / 100;
       }
     }
 
-   return {
-  'N° Commande': item.order.order_number,
-  'Client': `${item.order.customer_firstname || ''} ${item.order.customer_name}`.trim(),
-  'Date enlèvement': new Date(item.order.pickup_date).toLocaleDateString('fr-FR'),
-  'Heure enlèvement': item.order.pickup_time,
-  'Produit': item.product?.libelle_caisse || item.product_name,
-  'Quantité': quantity,
-  'Unité': unitCaisse,
-  'Commentaire client': item.order.customer_comment || '',
-  'Sous-total': item.subtotal_ttc,
-};
+    return {
+      'N° Commande': item.order.order_number,
+      'Client': `${item.order.customer_firstname || ''} ${item.order.customer_name}`.trim(),
+      'Date enlèvement': new Date(item.order.pickup_date).toLocaleDateString('fr-FR'),
+      'Heure enlèvement': item.order.pickup_time,
+      'Produit': item.product?.libelle_caisse || item.product_name,
+      'Quantité caisse': quantityConverted,
+      'Unité caisse': unitCaisse,
+      'Unité commande': unitCommande,
+      'Quantité commandée': quantityOriginal,
+      'Poids unitaire (kg)': weightPerUnit || '-',
+      'Commentaire client': item.order.customer_comment || '',
+      'Sous-total': item.subtotal_ttc,
+    };
   });
 
   const ws = XLSX.utils.json_to_sheet(data);
