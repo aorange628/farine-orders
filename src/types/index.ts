@@ -19,10 +19,11 @@ export interface Product {
   id: number;
   category_id: number;
   name: string;
-  unit_commande: 'unité' | 'kg' | 'miche' | 'part';  // ← Ajout de 'part'
-  unit_production: 'unité' | 'kg' | 'miche' | 'part';  // ← Ajout de 'part'
-  unit_caisse: 'unité' | 'kg' | 'miche' | 'part';  // ← AJOUT
-  quantity_increment: number;  // ← NOUVEAU (remplace allow_half_quantity)
+  unit_commande: 'unité' | 'kg' | 'miche' | 'part';
+  unit_production: 'unité' | 'kg' | 'miche' | 'part' | 'batch';
+  unit_caisse: 'unité' | 'kg' | 'miche' | 'part';
+  quantity_increment: number;
+  quantity_batch_production?: number | null;
   price_ttc: number;
   description: string | null;
   photo_url: string | null;
@@ -34,7 +35,6 @@ export interface Product {
   weight_per_unit?: number | null;
   sort_order?: number;
 }
-
 export interface ProductWithCategory extends Product {
   category: Category;
 }
@@ -82,9 +82,10 @@ export interface CreateProductInput {
   category_id: number;
   name: string;
   unit_commande: 'unité' | 'kg' | 'miche' | 'part';
-  unit_production: 'unité' | 'kg' | 'miche' | 'part';
-  unit_caisse: 'unité' | 'kg' | 'miche' | 'part';  // ← AJOUT
-  quantity_increment: number;  // ← NOUVEAU
+  unit_production: 'unité' | 'kg' | 'miche' | 'part' | 'batch';
+  unit_caisse: 'unité' | 'kg' | 'miche' | 'part';
+  quantity_increment: number;
+  quantity_batch_production?: number;
   price_ttc: number;
   description?: string;
   photo_url?: string;
