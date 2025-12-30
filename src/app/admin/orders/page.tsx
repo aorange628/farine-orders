@@ -311,35 +311,35 @@ export default function OrdersPage() {
       const startRow = group.startRow;
       const color = colors[colorIndex % 2];
 
-      group.rows.forEach((rowData, index) => {
-        const row = worksheet.addRow(rowData);
+group.rows.forEach((rowData) => {
+  const row = worksheet.addRow(rowData);
 
-        // Appliquer la couleur de fond
-        row.eachCell((cell) => {
-          cell.fill = {
-            type: 'pattern',
-            pattern: 'solid',
-            fgColor: { argb: color }
-          };
-          cell.alignment = { vertical: 'top', horizontal: 'left', wrapText: true };
-          cell.border = {
-            top: { style: 'thin', color: { argb: 'FFD0D0D0' } },
-            left: { style: 'thin', color: { argb: 'FFD0D0D0' } },
-            bottom: { style: 'thin', color: { argb: 'FFD0D0D0' } },
-            right: { style: 'thin', color: { argb: 'FFD0D0D0' } }
-          };
-        });
+  // Appliquer la couleur de fond
+  row.eachCell((cell) => {
+    cell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: color }
+    };
+    cell.alignment = { vertical: 'top', horizontal: 'left', wrapText: true };
+    cell.border = {
+      top: { style: 'thin', color: { argb: 'FFD0D0D0' } },
+      left: { style: 'thin', color: { argb: 'FFD0D0D0' } },
+      bottom: { style: 'thin', color: { argb: 'FFD0D0D0' } },
+      right: { style: 'thin', color: { argb: 'FFD0D0D0' } }
+    };
+  });
+});
 
-        // Fusionner les cellules si plusieurs lignes dans la commande
-        if (index === 0 && group.rows.length > 1) {
-          const endRow = startRow + group.rows.length - 1;
-          worksheet.mergeCells(startRow, 1, endRow, 1); // N° Commande
-          worksheet.mergeCells(startRow, 2, endRow, 2); // Client
-          worksheet.mergeCells(startRow, 3, endRow, 3); // Date
-          worksheet.mergeCells(startRow, 4, endRow, 4); // Heure
-          worksheet.mergeCells(startRow, 8, endRow, 8); // Commentaire
-        }
-      });
+// Fusionner les cellules APRÈS avoir ajouté toutes les lignes du groupe
+if (group.rows.length > 1) {
+  const endRow = startRow + group.rows.length - 1;
+  worksheet.mergeCells(startRow, 1, endRow, 1); // N° Commande
+  worksheet.mergeCells(startRow, 2, endRow, 2); // Client
+  worksheet.mergeCells(startRow, 3, endRow, 3); // Date
+  worksheet.mergeCells(startRow, 4, endRow, 4); // Heure
+  worksheet.mergeCells(startRow, 8, endRow, 8); // Commentaire
+}
 
       colorIndex++;
     });
