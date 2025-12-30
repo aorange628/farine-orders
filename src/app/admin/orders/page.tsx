@@ -237,19 +237,19 @@ export default function OrdersPage() {
     }
 
     return {
-      'N° Commande': item.order.order_number,
-      'Client': `${item.order.customer_firstname || ''} ${item.order.customer_name}`.trim(),
-      'Date enlèvement': new Date(item.order.pickup_date).toLocaleDateString('fr-FR'),
-      'Heure enlèvement': item.order.pickup_time,
-      'Produit': item.product?.libelle_caisse || item.product_name,
-      'Quantité caisse': quantityConverted,
-      'Unité caisse': unitCaisse,
-      'Unité commande': unitCommande,
-      'Quantité commandée': quantityOriginal,
-      'Poids unitaire (kg)': weightPerUnit || '-',
-      'Commentaire client': item.order.customer_comment || '',
-      'Sous-total': item.subtotal_ttc,
-    };
+  'N° Commande': item.order.order_number,
+  'Client': `${item.order.customer_firstname || ''} ${item.order.customer_name}`.trim(),
+  'Date enlèvement': new Date(item.order.pickup_date).toLocaleDateString('fr-FR'),
+  'Heure enlèvement': item.order.pickup_time,
+  'Produit': item.product?.libelle_caisse || item.product_name,
+  'Quantité caisse': quantityConverted,
+  'Unité caisse': unitCaisse,
+  'Commentaire client': item.order.customer_comment || '',
+  'Unité commande': unitCommande,
+  'Quantité commandée': quantityOriginal,
+  'Poids unitaire (kg)': weightPerUnit || '-',
+  'Sous-total': item.subtotal_ttc,
+};
   });
 
   const ws = XLSX.utils.json_to_sheet(data);
