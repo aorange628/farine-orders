@@ -266,7 +266,7 @@ export default function OrdersPage() {
   // Calculer les fusions de cellules ET les groupes de commandes
   const merges: any[] = [];
   const orderGroups: { startRow: number; endRow: number; colorIndex: number }[] = [];
-  let currentOrderId = null;
+  let currentOrderId: number | null = null;
   let startRow = 1;
   let rowCount = 0;
   let colorIndex = 0;
