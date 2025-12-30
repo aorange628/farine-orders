@@ -230,6 +230,7 @@ export default function OrdersPage() {
     worksheet.columns = [
       { header: 'N° Commande', key: 'orderNumber', width: 12 },
       { header: 'Client', key: 'client', width: 20 },
+      { header: 'Téléphone', key: 'phone', width: 15 },
       { header: 'Date enlèvement', key: 'pickupDate', width: 12 },
       { header: 'Heure enlèvement', key: 'pickupTime', width: 12 },
       { header: 'Produit', key: 'product', width: 30 },
