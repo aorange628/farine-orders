@@ -197,31 +197,62 @@ export default function OrdersPage() {
   }
 
   async function exportOrderItemsToExcel() {
-    const selectedOrdersList = orders.filter(o => selectedOrders.has(o.id));
-    const orderIds = selectedOrdersList.map(o => o.id);
+  const selectedOrdersList = orders.filter(o => selectedOrders.has(o.id));
+  const orderIds = selectedOrdersList.map(o => o.id);
 
-    // Récupérer les lignes de commandes
-    const { data: items } = await supabase
-      .from('order_items')
-      .select('*, order:orders(order_number, customer_firstname, customer_name, pickup_date)')
-      .in('order_id', orderIds);
+  if (orderIds.length === 0) {
+    alert('Veuillez sélectionner au moins une commande');
+    return;
+  }
 
-    const data = (items || []).map((item: any) => ({
+  // Récupérer les lignes de commandes AVEC les données produit nécessaires
+  const { data: items } = await supabase
+    .from('order_items')
+    .select(`
+      *,
+      order:orders(order_number, customer_firstname, customer_name, pickup_date, pickup_time),
+      product:products(libelle_caisse, unit_caisse, unit_commande, weight_per_unit)
+    `)
+    .in('order_id', orderIds);
+
+  if (!items || items.length === 0) {
+    alert('Aucun produit dans les commandes sélectionnées');
+    return;
+  }
+
+  const data = (items || []).map((item: any) => {
+    let quantity = item.quantity;
+    const unitCaisse = item.product?.unit_caisse || 'unité';
+    const unitCommande = item.product?.unit_commande || 'unité';
+    const weightPerUnit = item.product?.weight_per_unit;
+
+    // CONVERSION : Si unit_caisse = kg et unit_commande ≠ kg
+    if (unitCaisse === 'kg' && unitCommande !== 'kg') {
+      if (weightPerUnit) {
+        quantity = quantity * weightPerUnit;
+        // Arrondir à 2 décimales
+        quantity = Math.round(quantity * 100) / 100;
+      }
+    }
+
+    return {
       'N° Commande': item.order.order_number,
       'Client': `${item.order.customer_firstname || ''} ${item.order.customer_name}`.trim(),
       'Date enlèvement': new Date(item.order.pickup_date).toLocaleDateString('fr-FR'),
-      'Produit': item.product_name,
-      'Quantité': item.quantity,
-      'Prix unitaire': item.unit_price_ttc,
+      'Heure enlèvement': item.order.pickup_time,
+      'Produit': item.product?.libelle_caisse || item.product_name,
+      'Quantité': quantity,
+      'Unité': unitCaisse,
       'Sous-total': item.subtotal_ttc,
-    }));
+    };
+  });
 
-    const ws = XLSX.utils.json_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Lignes');
-    XLSX.writeFile(wb, `lignes_commandes_${new Date().toISOString().split('T')[0]}.xlsx`);
-  }
-
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Caisse');
+  XLSX.writeFile(wb, `export_caisse_${new Date().toISOString().split('T')[0]}.xlsx`);
+}
+  
  async function exportProductionReport() {
   const selectedOrdersList = orders.filter(o => selectedOrders.has(o.id));
 
@@ -871,7 +902,7 @@ export default function OrdersPage() {
               className="btn-primary text-sm flex items-center gap-2"
             >
               <FileSpreadsheet className="w-4 h-4" />
-              Export Excel (lignes)
+              Export Excel caisse
             </button>
             <button
               onClick={exportProductionReport}
