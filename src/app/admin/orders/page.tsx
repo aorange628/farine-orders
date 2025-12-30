@@ -305,7 +305,7 @@ export default function OrdersPage() {
 
     // Ajouter les données et appliquer les styles
 let colorIndex = 0;
-const colors = ['FFFFFFFF', 'FFF0F0F0']; // Blanc, Gris clair
+const colors = ['FFFFFFFF', 'FFD0D0D0']; // Blanc, Gris moyen
 
 orderGroups.forEach(group => {
   const color = colors[colorIndex % 2];
@@ -336,16 +336,12 @@ orderGroups.forEach(group => {
     });
   });
 
-  // Fusionner les cellules APRÈS avoir ajouté toutes les lignes du groupe
-  if (group.rows.length > 1) {
-    const endRowNumber = firstRowNumber + group.rows.length - 1;
-    worksheet.mergeCells(firstRowNumber, 1, endRowNumber, 1); // N° Commande
-    worksheet.mergeCells(firstRowNumber, 2, endRowNumber, 2); // Client
-    worksheet.mergeCells(firstRowNumber, 3, endRowNumber, 3); // Date
-    worksheet.mergeCells(firstRowNumber, 4, endRowNumber, 4); // Heure
-    worksheet.mergeCells(firstRowNumber, 8, endRowNumber, 8); // Commentaire
-  }
-
+ // Fusionner SEULEMENT les cellules de commentaire
+if (group.rows.length > 1) {
+  const endRowNumber = firstRowNumber + group.rows.length - 1;
+  worksheet.mergeCells(firstRowNumber, 8, endRowNumber, 8); // Commentaire client
+}
+  
   colorIndex++;
 });
     // Générer le fichier
