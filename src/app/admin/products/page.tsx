@@ -16,9 +16,10 @@ export default function ProductsPage() {
     category_id: '',
     name: '',
     unit_commande: 'unité' as 'unité' | 'kg' | 'miche' | 'part',
-    unit_production: 'unité' as 'unité' | 'kg' | 'miche' | 'part',
+    unit_production: 'unité' as 'unité' | 'kg' | 'miche' | 'part' | 'batch',
     unit_caisse: 'unité' as 'unité' | 'kg' | 'miche' | 'part',
     quantity_increment: '1',
+    quantity_batch_production: '',
     price_ttc: '',
     description: '',
     libelle_drive: '',
@@ -70,6 +71,7 @@ export default function ProductsPage() {
       unit_production: 'unité',
       unit_caisse: 'unité',
       quantity_increment: '1',
+      quantity_batch_production: '',
       price_ttc: '',
       description: '',
       libelle_drive: '',
@@ -88,6 +90,7 @@ export default function ProductsPage() {
       unit_production: product.unit_production,
       unit_caisse: product.unit_caisse,
       quantity_increment: product.quantity_increment.toString(),
+      quantity_batch_production: product.quantity_batch_production?.toString() || '',
       price_ttc: product.price_ttc.toString(),
       description: product.description || '',
       libelle_drive: product.libelle_drive || '',
@@ -107,6 +110,7 @@ export default function ProductsPage() {
       unit_production: formData.unit_production,
       unit_caisse: formData.unit_caisse,
       quantity_increment: parseFloat(formData.quantity_increment),
+      quantity_batch_production: formData.quantity_batch_production ? parseInt(formData.quantity_batch_production) : null,
       price_ttc: parseFloat(formData.price_ttc),
       description: formData.description || null,
       libelle_drive: formData.libelle_drive || null,
@@ -269,6 +273,7 @@ export default function ProductsPage() {
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Prix TTC</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">U. commande</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">U. production</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Qté batch</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">U. caisse</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Poids (kg)</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Libellé Drive</th>
@@ -294,6 +299,9 @@ export default function ProductsPage() {
                       <td className="px-4 py-3 font-semibold">{formatPrice(product.price_ttc)}</td>
                       <td className="px-4 py-3 text-sm">{product.unit_commande}</td>
                       <td className="px-4 py-3 text-sm">{product.unit_production}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        {product.quantity_batch_production || '-'}
+                      </td>
                       <td className="px-4 py-3 text-sm">{product.unit_caisse}</td>
                       <td className="px-4 py-3 text-sm text-gray-600">
                         {product.weight_per_unit ? `${product.weight_per_unit} kg` : '-'}
@@ -496,6 +504,7 @@ export default function ProductsPage() {
                     <option value="kg">kg</option>
                     <option value="miche">miche</option>
                     <option value="part">part</option>
+                    <option value="batch">batch</option>
                   </select>
                   <p className="text-xs text-gray-500 mt-1">
                     Pour la fabrication
@@ -521,22 +530,39 @@ export default function ProductsPage() {
                 </div>
               </div>
 
-              {/* Poids par unité */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Poids par unité (kg)
-                </label>
-                <input
-                  type="number"
-                  step="0.001"
-                  min="0"
-                  value={formData.weight_per_unit}
-                  onChange={(e) => setFormData({ ...formData, weight_per_unit: e.target.value })}
-                  placeholder="Ex: 1.1"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Poids moyen en kg (ex: 1,1 pour une miche de 1,1kg)
-                </p>
+              {/* Quantité batch production et Poids par unité */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Quantité batch production
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={formData.quantity_batch_production}
+                    onChange={(e) => setFormData({ ...formData, quantity_batch_production: e.target.value })}
+                    placeholder="Ex: 10"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Nombre d'unités par batch
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Poids par unité (kg)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.001"
+                    min="0"
+                    value={formData.weight_per_unit}
+                    onChange={(e) => setFormData({ ...formData, weight_per_unit: e.target.value })}
+                    placeholder="Ex: 1.1"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Poids moyen en kg (ex: 1,1 pour une miche de 1,1kg)
+                  </p>
+                </div>
               </div>
 
               {/* Libellé Drive et Libellé Caisse */}
