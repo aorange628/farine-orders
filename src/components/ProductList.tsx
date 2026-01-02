@@ -316,13 +316,6 @@ export default function ProductList({ onAddToCart, cart }: ProductListProps) {
     {inCart ? 'Modifier' : 'Ajouter'}
   </button>
 </div>
-```
-
----
-
-## 🎨 Résultat visuel :
-```
-[  −  ]  [ 2,5 ]  [  +  ]  [ Ajouter au panier ]
                         
                         {inCart && (
                           <div className="mt-2 text-sm text-farine-green font-medium text-center">
