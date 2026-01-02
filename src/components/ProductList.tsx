@@ -241,44 +241,88 @@ export default function ProductList({ onAddToCart, cart }: ProductListProps) {
                           </div>
                         </div>
 
-                        {/* Contrôles quantité */}
-                        <div className="flex items-center gap-3">
-                          <input
-                            type="number"
-                            min="0"
-                            step={step}
-                            value={quantity === 0 ? '' : roundQuantity(quantity)}
-                            onChange={(e) => {
-                              const value = parseFloat(e.target.value) || 0;
-                              const validatedValue = validateQuantity(product, value);
-                              const roundedValue = roundQuantity(validatedValue);
-                              setQuantities(prev => {
-                                const newQuantities = new Map(prev);
-                                newQuantities.set(product.id, Math.max(0, roundedValue));
-                                return newQuantities;
-                              });
-                            }}
-                            onBlur={(e) => {
-                              // Validation finale au blur pour s'assurer que la valeur respecte le step
-                              const value = parseFloat(e.target.value) || 0;
-                              const validatedValue = validateQuantity(product, value);
-                              const roundedValue = roundQuantity(validatedValue);
-                              setQuantities(prev => {
-                                const newQuantities = new Map(prev);
-                                newQuantities.set(product.id, Math.max(0, roundedValue));
-                                return newQuantities;
-                              });
-                            }}
-                            className="w-28 px-3 py-2 text-center border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-farine-green"
-                          />
-                          <button
-                            onClick={() => handleAddToCart(product)}
-                            disabled={quantity === 0}
-                            className="flex-1 btn-primary text-sm py-2"
-                          >
-                            {inCart ? 'Modifier' : 'Ajouter'}
-                          </button>
-                        </div>
+              {/* Contrôles quantité */}
+<div className="flex items-center gap-2">
+  {/* Bouton moins */}
+  <button
+    type="button"
+    onClick={() => {
+      const newValue = Math.max(0, quantity - product.quantity_increment);
+      const roundedValue = roundQuantity(newValue);
+      setQuantities(prev => {
+        const newQuantities = new Map(prev);
+        newQuantities.set(product.id, roundedValue);
+        return newQuantities;
+      });
+    }}
+    disabled={quantity === 0}
+    className="w-10 h-10 flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+  >
+    −
+  </button>
+
+  {/* Input quantité */}
+  <input
+    type="number"
+    min="0"
+    step={step}
+    value={quantity === 0 ? '' : roundQuantity(quantity)}
+    onChange={(e) => {
+      const value = parseFloat(e.target.value) || 0;
+      const validatedValue = validateQuantity(product, value);
+      const roundedValue = roundQuantity(validatedValue);
+      setQuantities(prev => {
+        const newQuantities = new Map(prev);
+        newQuantities.set(product.id, Math.max(0, roundedValue));
+        return newQuantities;
+      });
+    }}
+    onBlur={(e) => {
+      const value = parseFloat(e.target.value) || 0;
+      const validatedValue = validateQuantity(product, value);
+      const roundedValue = roundQuantity(validatedValue);
+      setQuantities(prev => {
+        const newQuantities = new Map(prev);
+        newQuantities.set(product.id, Math.max(0, roundedValue));
+        return newQuantities;
+      });
+    }}
+    className="w-20 px-2 py-2 text-center border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-farine-green"
+  />
+
+  {/* Bouton plus */}
+  <button
+    type="button"
+    onClick={() => {
+      const newValue = quantity + product.quantity_increment;
+      const roundedValue = roundQuantity(newValue);
+      setQuantities(prev => {
+        const newQuantities = new Map(prev);
+        newQuantities.set(product.id, roundedValue);
+        return newQuantities;
+      });
+    }}
+    className="w-10 h-10 flex items-center justify-center bg-farine-green hover:bg-farine-green-dark text-white font-bold rounded-lg transition-colors"
+  >
+    +
+  </button>
+
+  {/* Bouton Ajouter */}
+  <button
+    onClick={() => handleAddToCart(product)}
+    disabled={quantity === 0}
+    className="flex-1 btn-primary text-sm py-2"
+  >
+    {inCart ? 'Modifier' : 'Ajouter'}
+  </button>
+</div>
+```
+
+---
+
+## 🎨 Résultat visuel :
+```
+[  −  ]  [ 2,5 ]  [  +  ]  [ Ajouter au panier ]
                         
                         {inCart && (
                           <div className="mt-2 text-sm text-farine-green font-medium text-center">
