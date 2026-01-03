@@ -150,9 +150,9 @@ export default function SettingsPage() {
         <textarea
           value={welcomeMessage}
           onChange={(e) => setWelcomeMessage(e.target.value)}
-          rows={4}
+          rows={10}
           maxLength={1000}
-          className="w-full resize-none"
+          className="w-full resize-y"
           placeholder="Bienvenue sur notre système de commande en ligne..."
         />
         <p className="text-xs text-gray-500 mt-2">
