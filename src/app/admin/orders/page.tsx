@@ -476,8 +476,9 @@ const { data: allProducts } = await supabase
 
   allProducts?.forEach(product => {
   const row: any = {
-    'Libellé Drive': product.libelle_drive || product.name,
+
     'Libellé Caisse': product.libelle_caisse || product.name,
+    'Libellé Drive': product.libelle_drive || product.name,
     'Prix TTC (€)': product.price_ttc,
     'Unité commande': product.unit_commande,
     'Poids unitaire (kg)': product.weight_per_unit || '',
