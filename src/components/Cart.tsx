@@ -137,6 +137,29 @@ export default function Cart({ cart, onRemoveFromCart, onUpdateQuantity, onSubmi
     setFormData(prev => ({ ...prev, pickup_date: selectedDate }));
   }
 
+  // Gère la sélection de l'heure d'enlèvement en bloquant tout créneau
+  // en dehors de la plage 8h-18h
+  function handleTimeChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const selectedTime = e.target.value;
+
+    if (!selectedTime) {
+      setFormData(prev => ({ ...prev, pickup_time: '' }));
+      return;
+    }
+
+    if (selectedTime < '08:00' || selectedTime > '18:00') {
+      setErrors(prev => ({
+        ...prev,
+        pickup_time: 'Les commandes peuvent être retirées entre 8h et 18h',
+      }));
+      setFormData(prev => ({ ...prev, pickup_time: '' }));
+      return;
+    }
+
+    setErrors(prev => ({ ...prev, pickup_time: undefined }));
+    setFormData(prev => ({ ...prev, pickup_time: selectedTime }));
+  }
+
   function validateForm(): boolean {
     const newErrors: Partial<Record<keyof OrderFormData, string>> = {};
      if (!formData.customer_firstname.trim()) {
@@ -161,6 +184,8 @@ export default function Cart({ cart, onRemoveFromCart, onUpdateQuantity, onSubmi
 
     if (!formData.pickup_time) {
       newErrors.pickup_time = 'L\'heure d\'enlèvement est obligatoire';
+    } else if (formData.pickup_time < '08:00' || formData.pickup_time > '18:00') {
+      newErrors.pickup_time = 'Les commandes peuvent être retirées entre 8h et 18h';
     }
 
     setErrors(newErrors);
@@ -355,9 +380,9 @@ export default function Cart({ cart, onRemoveFromCart, onUpdateQuantity, onSubmi
             <input
               type="time"
               value={formData.pickup_time}
-              onChange={(e) =>
-                setFormData({ ...formData, pickup_time: e.target.value })
-              }
+              onChange={handleTimeChange}
+              min="08:00"
+              max="18:00"
               className={errors.pickup_time ? 'border-red-500' : ''}
             />
             {errors.pickup_time && (
