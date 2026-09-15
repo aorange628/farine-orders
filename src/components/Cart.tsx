@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Product, CalendarOverride } from '@/types';
 import { supabase } from '@/lib/supabase';
-import { formatPrice, calculateEarliestPickupDate, formatDate, isValidPhoneNumber } from '@/lib/utils';
+import { formatPrice, calculateEarliestPickupDate, formatDate, isValidPhoneNumber, isClosedDate } from '@/lib/utils';
 import { ShoppingCart, Trash2, Calendar, Clock, User, Phone, MessageSquare } from 'lucide-react';
 
 interface CartProps {
@@ -111,6 +111,32 @@ export default function Cart({ cart, onRemoveFromCart, onUpdateQuantity, onSubmi
     0
   );
 
+  // Gère la sélection de la date d'enlèvement en bloquant les jours fermés
+  // (dimanche/lundi par défaut, ou toute fermeture exceptionnelle définie
+  // dans le calendrier admin via calendar_overrides)
+  function handleDateChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const selectedDate = e.target.value;
+
+    if (!selectedDate) {
+      setFormData(prev => ({ ...prev, pickup_date: '' }));
+      return;
+    }
+
+    const dateObj = new Date(selectedDate + 'T00:00:00');
+
+    if (isClosedDate(dateObj, overridesMap)) {
+      setErrors(prev => ({
+        ...prev,
+        pickup_date: 'La boutique est fermée ce jour-là. Merci de choisir un autre jour.',
+      }));
+      setFormData(prev => ({ ...prev, pickup_date: '' }));
+      return;
+    }
+
+    setErrors(prev => ({ ...prev, pickup_date: undefined }));
+    setFormData(prev => ({ ...prev, pickup_date: selectedDate }));
+  }
+
   function validateForm(): boolean {
     const newErrors: Partial<Record<keyof OrderFormData, string>> = {};
      if (!formData.customer_firstname.trim()) {
@@ -129,6 +155,8 @@ export default function Cart({ cart, onRemoveFromCart, onUpdateQuantity, onSubmi
 
     if (!formData.pickup_date) {
       newErrors.pickup_date = 'La date d\'enlèvement est obligatoire';
+    } else if (isClosedDate(new Date(formData.pickup_date + 'T00:00:00'), overridesMap)) {
+      newErrors.pickup_date = 'La boutique est fermée ce jour-là. Merci de choisir un autre jour.';
     }
 
     if (!formData.pickup_time) {
@@ -309,9 +337,7 @@ export default function Cart({ cart, onRemoveFromCart, onUpdateQuantity, onSubmi
             <input
               type="date"
               value={formData.pickup_date}
-              onChange={(e) =>
-                setFormData({ ...formData, pickup_date: e.target.value })
-              }
+              onChange={handleDateChange}
               min={minPickupDate}
               className={errors.pickup_date ? 'border-red-500' : ''}
             />
