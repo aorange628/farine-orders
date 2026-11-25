@@ -4,10 +4,11 @@ import { useState, useEffect } from 'react';
 import { Product, CalendarOverride } from '@/types';
 import { supabase } from '@/lib/supabase';
 import { formatPrice, calculateEarliestPickupDate, formatDate, isValidPhoneNumber, isClosedDate } from '@/lib/utils';
-import { ShoppingCart, Trash2, Calendar, Clock, User, Phone, MessageSquare } from 'lucide-react';
+import { ShoppingCart, Trash2, Calendar, Clock, User, Phone, MessageSquare, MapPin } from 'lucide-react';
 
 interface CartProps {
   cart: Map<number, { product: Product; quantity: number }>;
+  storeName?: string;
   onRemoveFromCart: (productId: number) => void;
   onUpdateQuantity: (productId: number, quantity: number) => void;
   onSubmitOrder: (orderData: OrderFormData) => Promise<void>;
@@ -46,7 +47,7 @@ function formatQuantityDisplay(quantity: number, unit: string): string {
   }
 }
 
-export default function Cart({ cart, onRemoveFromCart, onUpdateQuantity, onSubmitOrder }: CartProps) {
+export default function Cart({ cart, storeName, onRemoveFromCart, onUpdateQuantity, onSubmitOrder }: CartProps) {
   const [formData, setFormData] = useState<OrderFormData>({
     customer_firstname: '',
     customer_name: '',
@@ -274,6 +275,15 @@ export default function Cart({ cart, onRemoveFromCart, onUpdateQuantity, onSubmi
             </span>
           </div>
         </div>
+
+        {storeName && (
+          <div className="mt-4 p-3 bg-farine-beige border border-farine-green rounded-lg flex items-start gap-2">
+            <MapPin className="w-4 h-4 text-farine-green mt-0.5 flex-shrink-0" />
+            <p className="text-sm text-gray-800">
+              <strong>Retrait :</strong> {storeName}
+            </p>
+          </div>
+        )}
 
         {minPickupDate && (
           <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">

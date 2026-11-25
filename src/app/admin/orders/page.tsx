@@ -20,6 +20,20 @@ import Link from 'next/link';
 import * as XLSX from 'xlsx';
 import ExcelJS from 'exceljs';
 import jsPDF from 'jspdf';
+import { STORES, getStore } from '@/lib/stores';
+
+// Badge boutique réutilisé dans le tableau
+function StoreBadge({ location }: { location: string | null | undefined }) {
+  const store = getStore(location);
+  if (!store) {
+    return <span className="text-xs text-gray-400">—</span>;
+  }
+  return (
+    <span className={`inline-block px-2 py-0.5 text-xs font-semibold rounded ${store.badgeClass}`}>
+      {store.shortName}
+    </span>
+  );
+}
 
 // Fonction pour obtenir le lundi de la semaine en cours
 function getMondayOfCurrentWeek(): string {
@@ -50,6 +64,7 @@ export default function OrdersPage() {
   const [filters, setFilters] = useState({
   search: '',
   status: '',
+  pickupLocation: '',
   pickupDateFrom: getMondayOfCurrentWeek(),
   pickupDateTo: addDays(getMondayOfCurrentWeek(), 30),
   createdDateFrom: '',
@@ -91,6 +106,9 @@ export default function OrdersPage() {
     }
     if (filters.status) {
       query = query.eq('status', filters.status);
+    }
+    if (filters.pickupLocation) {
+      query = query.eq('pickup_location', filters.pickupLocation);
     }
     if (filters.pickupDateFrom) {
       query = query.gte('pickup_date', filters.pickupDateFrom);
@@ -181,6 +199,7 @@ export default function OrdersPage() {
       'Prénom': order.customer_firstname || '',
       'Nom': order.customer_name,
       'Téléphone': order.customer_phone,
+      'Boutique': getStore(order.pickup_location)?.shortName || '',
       'Date commande': new Date(order.created_at).toLocaleDateString('fr-FR'),
       'Heure commande': new Date(order.created_at).toLocaleTimeString('fr-FR'),
       'Date enlèvement': new Date(order.pickup_date).toLocaleDateString('fr-FR'),
@@ -211,7 +230,7 @@ export default function OrdersPage() {
   .from('order_items')
   .select(`
     *,
-    order:orders(order_number, customer_firstname, customer_name, customer_phone, pickup_date, pickup_time, customer_comment),
+    order:orders(order_number, customer_firstname, customer_name, customer_phone, pickup_location, pickup_date, pickup_time, customer_comment),
     product:products(libelle_caisse, unit_caisse, unit_commande, weight_per_unit)
   `)
   .in('order_id', orderIds)
@@ -255,6 +274,7 @@ const workbook = new ExcelJS.Workbook();
       { header: 'N° Commande', key: 'orderNumber', width: 12 },
       { header: 'Client', key: 'client', width: 20 },
       { header: 'Téléphone', key: 'phone', width: 15 },
+      { header: 'Boutique', key: 'store', width: 10 },
       { header: 'Date enlèvement', key: 'pickupDate', width: 12 },
       { header: 'Heure enlèvement', key: 'pickupTime', width: 12 },
       { header: 'Produit', key: 'product', width: 30 },
@@ -297,6 +317,7 @@ const workbook = new ExcelJS.Workbook();
   orderNumber: item.order.order_number,
   client: `${item.order.customer_firstname || ''} ${item.order.customer_name}`.trim(),
   phone: item.order.customer_phone,
+  store: getStore(item.order.pickup_location)?.shortName || '',
   pickupDate: new Date(item.order.pickup_date).toLocaleDateString('fr-FR'),
   pickupTime: item.order.pickup_time,
   product: item.product?.libelle_caisse || item.product_name,
@@ -365,7 +386,7 @@ orderGroups.forEach(group => {
  // Fusionner SEULEMENT les cellules de commentaire
 if (group.rows.length > 1) {
   const endRowNumber = firstRowNumber + group.rows.length - 1;
-  worksheet.mergeCells(firstRowNumber, 9, endRowNumber, 9); // Commentaire client (colonne 9 maintenant)
+  worksheet.mergeCells(firstRowNumber, 10, endRowNumber, 10); // Commentaire client (colonne 10 depuis l'ajout de Boutique)
 }
   
   colorIndex++;
@@ -702,6 +723,12 @@ const colWidths = [
       pdf.setFontSize(12);
       pdf.setFont('helvetica', 'bold');
       pdf.text(`N° COMMANDE : ${order.order_number}`, margin + 2, yPos + 5.5);
+
+      // Boutique de retrait, bien visible au centre du bandeau
+      const orderStore = getStore(order.pickup_location);
+      if (orderStore) {
+        pdf.text(`BOUTIQUE : ${orderStore.shortName.toUpperCase()}`, pageWidth / 2, yPos + 5.5, { align: 'center' });
+      }
       
       // Date de commande à droite
       pdf.setFontSize(10);
@@ -930,7 +957,7 @@ const colWidths = [
           <Filter className="w-5 h-5 text-farine-green" />
           <h2 className="text-lg font-bold text-gray-900">Filtres</h2>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Recherche (nom ou n°)
@@ -957,6 +984,20 @@ const colWidths = [
               <option value="">Tous les statuts</option>
               {statuses.map(status => (
                 <option key={status.id} value={status.name}>{status.name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Boutique
+            </label>
+            <select
+              value={filters.pickupLocation}
+              onChange={(e) => setFilters({ ...filters, pickupLocation: e.target.value })}
+            >
+              <option value="">Toutes les boutiques</option>
+              {STORES.map(store => (
+                <option key={store.id} value={store.id}>{store.shortName}</option>
               ))}
             </select>
           </div>
@@ -998,6 +1039,7 @@ const colWidths = [
               setFilters({
                 search: '',
                 status: '',
+                pickupLocation: '',
                 pickupDateFrom: '',
                 pickupDateTo: '',
                 createdDateFrom: '',
@@ -1077,6 +1119,7 @@ const colWidths = [
                   </button>
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">N° Commande</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Boutique</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Client</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Date enlèvement</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Montant</th>
@@ -1104,6 +1147,7 @@ const colWidths = [
                       </button>
                     </td>
                     <td className="px-4 py-3 text-sm font-mono">{order.order_number}</td>
+                    <td className="px-4 py-3"><StoreBadge location={order.pickup_location} /></td>
                     <td className="px-4 py-3 text-sm">{order.customer_firstname} {order.customer_name}</td>
                     <td className="px-4 py-3 text-sm">
                       {new Date(order.pickup_date).toLocaleDateString('fr-FR')} à {order.pickup_time}

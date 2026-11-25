@@ -7,6 +7,7 @@ import { Order, OrderItem, OrderStatus } from '@/types';
 import { formatPrice, formatDate } from '@/lib/utils';
 import { ArrowLeft, Save, Printer, Trash2 } from 'lucide-react';
 import Link from 'next/link';
+import { STORES, getStore } from '@/lib/stores';
 
 export default function OrderDetailPage() {
   const params = useParams();
@@ -23,6 +24,7 @@ export default function OrderDetailPage() {
     customer_firstname: '',
     customer_name: '',
     customer_phone: '',
+    pickup_location: '',
     pickup_date: '',
     pickup_time: '',
     customer_comment: '',
@@ -48,6 +50,7 @@ export default function OrderDetailPage() {
         customer_firstname: orderData.customer_firstname || '',
         customer_name: orderData.customer_name,
         customer_phone: orderData.customer_phone,
+        pickup_location: orderData.pickup_location || '',
         pickup_date: orderData.pickup_date,
         pickup_time: orderData.pickup_time,
         customer_comment: orderData.customer_comment || '',
@@ -92,6 +95,7 @@ export default function OrderDetailPage() {
           customer_firstname: formData.customer_firstname,
           customer_name: formData.customer_name,
           customer_phone: formData.customer_phone,
+          pickup_location: formData.pickup_location,
           pickup_date: formData.pickup_date,
           pickup_time: formData.pickup_time,
           customer_comment: formData.customer_comment || null,
@@ -202,6 +206,11 @@ function formatQuantityWithUnit(quantity: number, unit: string): string {
             <p className="text-gray-600 mt-1">
               Créée le {formatDate(new Date(order.created_at), 'PPP à HH:mm')}
             </p>
+            {getStore(order.pickup_location) && (
+              <span className={`inline-block mt-2 px-3 py-1 text-sm font-semibold rounded ${getStore(order.pickup_location)!.badgeClass}`}>
+                Retrait : {getStore(order.pickup_location)!.name}
+              </span>
+            )}
           </div>
         </div>
         <div className="flex gap-2">
@@ -270,8 +279,23 @@ function formatQuantityWithUnit(quantity: number, unit: string): string {
 
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4">
-              Date et heure d'enlèvement
+              Boutique, date et heure d'enlèvement
             </h2>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Boutique de retrait
+              </label>
+              <select
+                value={formData.pickup_location}
+                onChange={(e) =>
+                  setFormData({ ...formData, pickup_location: e.target.value })
+                }
+              >
+                {STORES.map((store) => (
+                  <option key={store.id} value={store.id}>{store.name}</option>
+                ))}
+              </select>
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">

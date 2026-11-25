@@ -45,6 +45,7 @@ export interface Order {
   customer_firstname: string;
   customer_name: string;
   customer_phone: string;
+  pickup_location: 'pre' | 'lilas';
   pickup_date: string;
   pickup_time: string;
   customer_comment: string | null;

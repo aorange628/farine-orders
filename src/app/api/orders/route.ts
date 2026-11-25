@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { generateOrderNumber, calculateOrderTotal, parseOrderIncrement } from '@/lib/utils';
 import { format } from 'date-fns';
+import { isValidPickupLocation } from '@/lib/stores';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -15,6 +16,7 @@ export async function POST(request: NextRequest) {
       customer_firstname,  // ← AJOUT
       customer_name,
       customer_phone,
+      pickup_location,
       pickup_date,
       pickup_time,
       customer_comment,
@@ -22,9 +24,17 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Validation des données
-    if (!customer_firstname || !customer_name || !customer_phone || !pickup_date || !pickup_time) {  // ← MODIFIÉ
+    if (!customer_firstname || !customer_name || !customer_phone || !pickup_date || !pickup_time) {
       return NextResponse.json(
         { error: 'Champs obligatoires manquants' },
+        { status: 400 }
+      );
+    }
+
+    // Validation de la boutique de retrait
+    if (!isValidPickupLocation(pickup_location)) {
+      return NextResponse.json(
+        { error: 'Merci de choisir une boutique de retrait' },
         { status: 400 }
       );
     }
@@ -94,9 +104,10 @@ export async function POST(request: NextRequest) {
       .from('orders')
       .insert({
         order_number,
-        customer_firstname,  // ← CORRIGÉ
+        customer_firstname,
         customer_name,
         customer_phone,
+        pickup_location,
         pickup_date,
         pickup_time,
         customer_comment: customer_comment || null,
