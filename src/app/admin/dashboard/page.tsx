@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { formatPrice } from '@/lib/utils';
 import { ShoppingCart, Package, Clock, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
+import { getStore } from '@/lib/stores';
 
 interface Stats {
   totalOrders: number;
@@ -179,6 +180,7 @@ export default function DashboardPage() {
               <thead className="bg-farine-beige">
                 <tr>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">N° Commande</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Boutique</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Client</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Date enlèvement</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Montant</th>
@@ -189,6 +191,15 @@ export default function DashboardPage() {
                 {recentOrders.map((order) => (
                   <tr key={order.id} className="hover:bg-farine-beige transition-colors">
                     <td className="px-4 py-3 text-sm font-mono">{order.order_number}</td>
+                    <td className="px-4 py-3">
+                      {getStore(order.pickup_location) ? (
+                        <span className={`inline-block px-2 py-0.5 text-xs font-semibold rounded ${getStore(order.pickup_location)!.badgeClass}`}>
+                          {getStore(order.pickup_location)!.shortName}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-gray-400">—</span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-sm">{order.customer_name}</td>
                     <td className="px-4 py-3 text-sm">
                       {new Date(order.pickup_date).toLocaleDateString('fr-FR')} à {order.pickup_time}

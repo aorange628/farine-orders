@@ -1,11 +1,13 @@
 'use client';
 
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
 import MonthCalendar from '@/components/MonthCalendar';
 
-export default function Header() {
+// children : contenu affiché entre le message d'accueil et le calendrier
+// (utilisé pour le choix de la boutique de retrait)
+export default function Header({ children }: { children?: ReactNode }) {
   const [welcomeMessage, setWelcomeMessage] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -60,6 +62,9 @@ export default function Header() {
             </p>
           </div>
         )}
+
+        {/* Choix de la boutique (au-dessus du calendrier) */}
+        {children}
 
         {/* Calendrier mensuel */}
         {!loading && <MonthCalendar />}

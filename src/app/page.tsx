@@ -30,10 +30,6 @@ export default function HomePage() {
 
   function handleSelectStore(id: PickupLocation) {
     setPickupLocation(id);
-    // Faire défiler vers le catalogue après le choix
-    setTimeout(() => {
-      document.getElementById('catalogue')?.scrollIntoView({ behavior: 'smooth' });
-    }, 50);
   }
 
   function handleAddToCart(product: Product, quantity: number) {
@@ -121,53 +117,9 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-farine-beige-light">
-      <Header />
-
-      {/* Modal de succès */}
-      {showSuccessModal && orderSuccess && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-2xl max-w-md w-full p-8 text-center">
-            <div className="mb-6">
-              <CheckCircle className="w-20 h-20 text-green-600 mx-auto" />
-            </div>
-            <h2 className="text-3xl font-bold text-farine-green mb-4">
-              Commande validée !
-            </h2>
-            <p className="text-gray-700 mb-2">
-              Votre commande a été enregistrée avec succès.
-            </p>
-            <div className="bg-farine-beige p-4 rounded-lg my-6">
-              <p className="text-sm text-gray-600 mb-1">Numéro de commande</p>
-              <p className="text-2xl font-bold text-farine-green font-mono">
-                {orderSuccess}
-              </p>
-            </div>
-            {getStore(successLocation) && (
-              <div className="border-2 border-farine-green rounded-lg p-4 mb-6">
-                <p className="text-sm text-gray-600 mb-1">Retrait à la boutique</p>
-                <p className="font-bold text-farine-green">{getStore(successLocation)!.name}</p>
-                <p className="text-sm text-gray-700">
-                  {getStore(successLocation)!.address}, {getStore(successLocation)!.city}
-                </p>
-              </div>
-            )}
-            <p className="text-sm text-gray-600 mb-6">
-              Vous pouvez récupérer votre commande à la date et l'heure que vous avez indiquées.
-              Pensez à noter votre numéro de commande.
-            </p>
-            <button
-              onClick={closeSuccessModal}
-              className="btn-primary w-full"
-            >
-              Fermer
-            </button>
-          </div>
-        </div>
-      )}
-
-      <main className="container mx-auto px-4 py-8">
+      <Header>
         {/* Étape 1 : choix de la boutique de retrait */}
-        <section className="bg-white rounded-lg shadow-md p-6 mb-8">
+        <section className="bg-white rounded-lg shadow-md p-6 mb-6 max-w-4xl mx-auto">
           <div className="flex items-center gap-2 mb-4">
             <MapPin className="w-6 h-6 text-farine-green" />
             <h2 className="text-2xl font-bold text-farine-green">
@@ -212,7 +164,52 @@ export default function HomePage() {
             </p>
           )}
         </section>
+      </Header>
 
+
+      {/* Modal de succès */}
+      {showSuccessModal && orderSuccess && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-2xl max-w-md w-full p-8 text-center">
+            <div className="mb-6">
+              <CheckCircle className="w-20 h-20 text-green-600 mx-auto" />
+            </div>
+            <h2 className="text-3xl font-bold text-farine-green mb-4">
+              Commande validée !
+            </h2>
+            <p className="text-gray-700 mb-2">
+              Votre commande a été enregistrée avec succès.
+            </p>
+            <div className="bg-farine-beige p-4 rounded-lg my-6">
+              <p className="text-sm text-gray-600 mb-1">Numéro de commande</p>
+              <p className="text-2xl font-bold text-farine-green font-mono">
+                {orderSuccess}
+              </p>
+            </div>
+            {getStore(successLocation) && (
+              <div className="border-2 border-farine-green rounded-lg p-4 mb-6">
+                <p className="text-sm text-gray-600 mb-1">Retrait à la boutique</p>
+                <p className="font-bold text-farine-green">{getStore(successLocation)!.name}</p>
+                <p className="text-sm text-gray-700">
+                  {getStore(successLocation)!.address}, {getStore(successLocation)!.city}
+                </p>
+              </div>
+            )}
+            <p className="text-sm text-gray-600 mb-6">
+              Vous pouvez récupérer votre commande à la date et l'heure que vous avez indiquées.
+              Pensez à noter votre numéro de commande.
+            </p>
+            <button
+              onClick={closeSuccessModal}
+              className="btn-primary w-full"
+            >
+              Fermer
+            </button>
+          </div>
+        </div>
+      )}
+
+      <main className="container mx-auto px-4 py-8">
         {/* Étape 2 : catalogue + panier (affichés une fois la boutique choisie) */}
         {selectedStore && (
           <div id="catalogue" className="grid grid-cols-1 lg:grid-cols-3 gap-8 scroll-mt-4">
