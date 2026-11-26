@@ -41,15 +41,15 @@ export default function Header({ children, showCalendar = true }: { children?: R
 
   return (
     <header className="bg-farine-beige border-b-4 border-farine-green">
-      <div className="container mx-auto px-4 py-6">
-        {/* Logo */}
-        <div className="flex justify-center mb-6">
-          <div className="relative w-full max-w-md">
+      <div className="container mx-auto px-4 py-4">
+        {/* Logo (version recadrée, sans marges transparentes) */}
+        <div className="flex justify-center mb-4">
+          <div className="relative w-full max-w-xs">
             <Image
-              src="/logo.png"
+              src="/logo-entete.png"
               alt="FARINE - Le Pré Saint-Gervais"
-              width={500}
-              height={200}
+              width={1000}
+              height={694}
               priority
               className="w-full h-auto"
             />
@@ -59,7 +59,7 @@ export default function Header({ children, showCalendar = true }: { children?: R
         {/* Message d'accueil */}
         {welcomeMessage && (
           <div className="text-center mb-6">
-            <p className="text-lg text-gray-700 max-w-2xl mx-auto whitespace-pre-line">
+            <p className="text-lg font-bold text-gray-800 max-w-2xl mx-auto whitespace-pre-line">
               {welcomeMessage}
             </p>
           </div>

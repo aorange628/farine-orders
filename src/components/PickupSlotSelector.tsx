@@ -148,8 +148,7 @@ export default function PickupSlotSelector({ overrides, date, time, onChange }: 
                 {formatDate(new Date(minDate + 'T00:00:00'), 'EEEE d MMMM yyyy')}
               </p>
               <p className="mt-1 text-blue-700">
-                Commande avant {ORDER_CUTOFF_HOUR}h : retrait dès le jour d'ouverture suivant.
-                Après {ORDER_CUTOFF_HOUR}h, ou le dimanche et le lundi : un jour d'ouverture de plus.
+                Commander avant {ORDER_CUTOFF_HOUR}h pour le jour d'ouverture suivant
               </p>
             </div>
           )}

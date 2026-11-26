@@ -227,6 +227,11 @@ export default function MonthCalendar({ selectedDate, isSelectable, onSelectDate
       {/* Grille du calendrier */}
       <div className="grid grid-cols-7 gap-1">
         {days.map(day => {
+          // Jours des mois précédent/suivant : case vide (garde l'alignement de la grille)
+          if (!isSameMonth(day, currentMonth)) {
+            return <div key={day.toISOString()} aria-hidden="true" />;
+          }
+
           const dayInfo = getDayInfo(day);
           const isToday = day.getTime() === today.getTime();
           const isHovered = hoveredDay?.getTime() === day.getTime();
