@@ -1,4 +1,4 @@
-import { format, addDays, isAfter, setHours } from 'date-fns';
+import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { CalendarOverride, DaySchedule } from '@/types';
 
@@ -29,115 +29,84 @@ export function isClosedDate(
   return dayOfWeek === 0 || dayOfWeek === 1;
 }
 
+/** Heure limite de commande : avant, retrait possible dès le prochain jour ouvré ; après, à partir du 2e */
+export const ORDER_CUTOFF_HOUR = 11;
+
 /**
- * Vérifie si une date peut être sélectionnée comme date d'enlèvement
- * en tenant compte des extensions de délai (cutoff_date) UNIQUEMENT pour le Pain
+ * Vérifie si une date peut être sélectionnée comme date d'enlèvement.
+ * Règle : identique pour tous les produits.
+ * - le jour doit être ouvert
+ * - le jour doit être >= baseMinDate (J+1 ou J+2 ouvré selon l'heure de commande)
+ * - si une date limite de commande (cutoff_date) est définie pour ce jour
+ *   dans le calendrier admin, on ne peut plus commander après cette date (23h59)
  * @param date - Date candidate
  * @param overrides - Map des overrides
- * @param baseMinDate - Date minimum calculée selon les règles normales
- * @param categoryName - Catégorie du produit ('Pain' ou 'Autre')
+ * @param baseMinDate - Premier jour de retrait possible
  * @returns true si la date est sélectionnable
  */
 export function isDateSelectableForPickup(
   date: Date,
   overrides: Map<string, CalendarOverride>,
-  baseMinDate: Date,
-  categoryName: string
+  baseMinDate: Date
 ): boolean {
-  // Si le jour est fermé, jamais sélectionnable
   if (isClosedDate(date, overrides)) {
     return false;
   }
-  
-  const dateString = format(date, 'yyyy-MM-dd');
-  const override = overrides.get(dateString);
-  
-  // Extension de délai (cutoff_date) UNIQUEMENT pour le Pain
-  if (categoryName === 'Pain' && override && override.cutoff_date) {
-    const cutoffDate = new Date(override.cutoff_date + 'T20:00:00');
-    const now = new Date();
-    
-    // On peut commander pour ce jour SI on est encore avant le cutoff
-    if (now <= cutoffDate) {
-      return true; // Extension autorisée
-    } else {
-      return false; // Cutoff dépassé
+
+  if (date < baseMinDate) {
+    return false;
+  }
+
+  const override = overrides.get(format(date, 'yyyy-MM-dd'));
+  if (override && override.cutoff_date) {
+    const cutoff = new Date(override.cutoff_date + 'T23:59:59');
+    if (new Date() > cutoff) {
+      return false; // Date limite de commande dépassée
     }
   }
-  
-  // Pour les autres catégories OU si pas de cutoff, utiliser les règles normales
-  return date >= baseMinDate;
+
+  return true;
 }
 
 /**
- * Calcule la date d'enlèvement la plus proche selon les règles métier
- * VERSION AVEC EXTENSIONS DE DÉLAI (cutoff_date) UNIQUEMENT POUR LE PAIN
- * @param categoryName - Nom de la catégorie du produit
+ * Calcule la date d'enlèvement la plus proche.
+ * Règle unique pour tous les produits, en jours ouvrés (jours d'ouverture) :
+ * - commande avant 11h : retrait possible dès le prochain jour ouvré (J+1)
+ * - commande à partir de 11h : retrait possible à partir du 2e jour ouvré (J+2)
+ * - commande passée un jour de fermeture (dimanche, lundi, fermeture du
+ *   calendrier), quelle que soit l'heure : comme après 11h (J+2 ouvré)
+ *   → du samedi 11h au mardi 11h, retrait possible à partir du mercredi
+ * Les jours fermés ne comptent pas dans les jours ouvrés.
  * @param overrides - Map des overrides indexés par date YYYY-MM-DD
- * @returns Date minimum d'enlèvement
+ * @returns Date minimum d'enlèvement (à minuit)
  */
 export function calculateEarliestPickupDate(
-  categoryName: string,
   overrides: Map<string, CalendarOverride> = new Map()
 ): Date {
   const now = new Date();
-  let startDate = new Date(now);
-  const currentDay = now.getDay();
-  
-  let isBeforeNoon = false;
-  
-  // Vérifier si aujourd'hui est fermé (dim/lun OU override)
   const todayIsClosed = isClosedDate(now, overrides);
-  
-  if (todayIsClosed) {
-    // Trouver le prochain jour ouvert
-    let nextOpenDate = new Date(now);
-    nextOpenDate.setDate(nextOpenDate.getDate() + 1);
-    
-    while (isClosedDate(nextOpenDate, overrides)) {
-      nextOpenDate.setDate(nextOpenDate.getDate() + 1);
-    }
-    
-    startDate = nextOpenDate;
-    isBeforeNoon = true;
-  } else {
-    const noon = setHours(new Date(), 12);
-    isBeforeNoon = !isAfter(now, noon);
-  }
-  
-  let daysToAdd: number;
-  
-  if (categoryName === 'Pain') {
-    daysToAdd = isBeforeNoon ? 3 : 4;
-  } else {
-    daysToAdd = isBeforeNoon ? 1 : 2;
-  }
-  
-  // Calculer la date minimum selon les règles NORMALES
-  let baseMinDate = new Date(startDate);
-  let addedDays = 0;
-  
-  while (addedDays < daysToAdd) {
+  const openDaysToAdd = !todayIsClosed && now.getHours() < ORDER_CUTOFF_HOUR ? 1 : 2;
+
+  // Avancer de N jours ouvrés à partir d'aujourd'hui
+  const baseMinDate = new Date(now);
+  baseMinDate.setHours(0, 0, 0, 0);
+  let added = 0;
+  while (added < openDaysToAdd) {
     baseMinDate.setDate(baseMinDate.getDate() + 1);
-    
     if (!isClosedDate(baseMinDate, overrides)) {
-      addedDays++;
+      added++;
     }
   }
-  
-  // Chercher la date la plus proche disponible
-  let candidateDate = new Date(now);
-  candidateDate.setDate(candidateDate.getDate() + 1);
-  
-  // Chercher jusqu'à 60 jours dans le futur max
+
+  // Premier jour sélectionnable (ouvert, date limite non dépassée), 60 jours max
+  const candidateDate = new Date(baseMinDate);
   for (let i = 0; i < 60; i++) {
-    if (isDateSelectableForPickup(candidateDate, overrides, baseMinDate, categoryName)) {
+    if (isDateSelectableForPickup(candidateDate, overrides, baseMinDate)) {
       return candidateDate;
     }
     candidateDate.setDate(candidateDate.getDate() + 1);
   }
-  
-  // Si rien trouvé (cas improbable), retourner baseMinDate
+
   return baseMinDate;
 }
 

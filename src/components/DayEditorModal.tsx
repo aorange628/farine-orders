@@ -148,14 +148,14 @@ export default function DayEditorModal({ day, onClose, onSave, onDelete }: DayEd
                 className="w-full"
               />
               <p className="text-xs text-gray-500 mt-1">
-                💡 Extension de délai : autorise exceptionnellement les commandes pour ce jour jusqu'à cette date.
+                💡 Date limite : les commandes pour ce jour ne sont plus acceptées après cette date (23h59), quel que soit le produit.
                 <br />
-                Exemple : Pour le 24/12 (normalement J+4), définir le cutoff au 21/12 permet de commander jusqu'au 21/12 à 23h59.
+                Exemple : pour le 24/12 (normalement commandable jusqu'au 23/12 à 11h), définir la date limite au 21/12 arrête les commandes le 21/12 à 23h59.
               </p>
               {cutoffDate && (
                 <p className="text-sm text-green-600 mt-2 font-medium">
-                  ✅ Extension : Les commandes pour le {new Date(day.date + 'T00:00:00').toLocaleDateString('fr-FR')} 
-                  {' '}sont autorisées jusqu'au {new Date(cutoffDate + 'T00:00:00').toLocaleDateString('fr-FR')} à 23h59
+                  ✅ Les commandes pour le {new Date(day.date + 'T00:00:00').toLocaleDateString('fr-FR')}
+                  {' '}sont acceptées jusqu'au {new Date(cutoffDate + 'T00:00:00').toLocaleDateString('fr-FR')} à 23h59
                 </p>
               )}
             </div>

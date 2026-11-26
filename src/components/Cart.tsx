@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Product, CalendarOverride } from '@/types';
 import { supabase } from '@/lib/supabase';
-import { formatPrice, calculateEarliestPickupDate, formatDate, isValidPhoneNumber, isClosedDate } from '@/lib/utils';
+import { formatPrice, calculateEarliestPickupDate, formatDate, isValidPhoneNumber, isDateSelectableForPickup } from '@/lib/utils';
 import { ShoppingCart, Trash2, Calendar, Clock, User, Phone, MessageSquare, MapPin } from 'lucide-react';
 
 interface CartProps {
@@ -21,6 +21,14 @@ export interface OrderFormData {
   pickup_date: string;
   pickup_time: string;
   customer_comment: string;
+}
+
+// Date locale au format YYYY-MM-DD (évite le décalage UTC de toISOString)
+function toDateString(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
 
 // Fonction helper pour arrondir proprement et éviter les erreurs de précision JavaScript
@@ -83,24 +91,17 @@ export default function Cart({ cart, storeName, onRemoveFromCart, onUpdateQuanti
   }, []);
 
   useEffect(() => {
-    // Calculer la date minimum selon la catégorie dominante dans le panier
+    // Date minimum : même règle pour tous les produits
+    // (avant 11h : prochain jour ouvré ; après 11h : 2e jour ouvré)
     if (cart.size > 0) {
-      let hasBreads = false;
-      cart.forEach(({ product }) => {
-        if (product.category_id === 1) {
-          hasBreads = true;
-        }
-      });
-      
-    
-      const earliestDate = calculateEarliestPickupDate(hasBreads ? 'Pain' : 'Autre', overridesMap);
-      setMinPickupDate(earliestDate.toISOString().split('T')[0]);
-      
+      const earliestDate = toDateString(calculateEarliestPickupDate(overridesMap));
+      setMinPickupDate(earliestDate);
+
       // Initialiser la date du formulaire si vide
       if (!formData.pickup_date) {
         setFormData(prev => ({
           ...prev,
-          pickup_date: earliestDate.toISOString().split('T')[0],
+          pickup_date: earliestDate,
         }));
       }
     }
@@ -111,6 +112,14 @@ export default function Cart({ cart, storeName, onRemoveFromCart, onUpdateQuanti
     (sum, item) => sum + item.product.price_ttc * item.quantity,
     0
   );
+
+  // Vérifie qu'une date est possible : jour ouvert, pas avant la date minimum,
+  // date limite de commande du calendrier admin non dépassée
+  function isPickupDateAllowed(date: string): boolean {
+    if (!date || (minPickupDate && date < minPickupDate)) return false;
+    const minDate = new Date((minPickupDate || date) + 'T00:00:00');
+    return isDateSelectableForPickup(new Date(date + 'T00:00:00'), overridesMap, minDate);
+  }
 
   // Gère la sélection de la date d'enlèvement en bloquant les jours fermés
   // (dimanche/lundi par défaut, ou toute fermeture exceptionnelle définie
@@ -123,12 +132,10 @@ export default function Cart({ cart, storeName, onRemoveFromCart, onUpdateQuanti
       return;
     }
 
-    const dateObj = new Date(selectedDate + 'T00:00:00');
-
-    if (isClosedDate(dateObj, overridesMap)) {
+    if (!isPickupDateAllowed(selectedDate)) {
       setErrors(prev => ({
         ...prev,
-        pickup_date: 'La boutique est fermée ce jour-là. Merci de choisir un autre jour.',
+        pickup_date: 'Ce jour n\'est pas disponible (boutique fermée ou délai dépassé). Merci de choisir un autre jour.',
       }));
       setFormData(prev => ({ ...prev, pickup_date: '' }));
       return;
@@ -179,8 +186,8 @@ export default function Cart({ cart, storeName, onRemoveFromCart, onUpdateQuanti
 
     if (!formData.pickup_date) {
       newErrors.pickup_date = 'La date d\'enlèvement est obligatoire';
-    } else if (isClosedDate(new Date(formData.pickup_date + 'T00:00:00'), overridesMap)) {
-      newErrors.pickup_date = 'La boutique est fermée ce jour-là. Merci de choisir un autre jour.';
+    } else if (!isPickupDateAllowed(formData.pickup_date)) {
+      newErrors.pickup_date = 'Ce jour n\'est pas disponible (boutique fermée ou délai dépassé). Merci de choisir un autre jour.';
     }
 
     if (!formData.pickup_time) {
@@ -289,7 +296,7 @@ export default function Cart({ cart, storeName, onRemoveFromCart, onUpdateQuanti
           <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <p className="text-sm text-blue-800">
               <strong>📅 Date d'enlèvement au plus tôt :</strong>{' '}
-              {formatDate(new Date(minPickupDate), 'PPP')}
+              {formatDate(new Date(minPickupDate + 'T00:00:00'), 'PPP')}
             </p>
           </div>
         )}
