@@ -29,8 +29,8 @@ export function isPickupDateAllowed(date: string, overrides: Map<string, Calenda
   return isDateSelectableForPickup(new Date(date + 'T00:00:00'), overrides, minDate);
 }
 
-// Créneaux de retrait toutes les 30 minutes, de 8h00 à 18h00
-export const PICKUP_SLOT_MINUTES = 30;
+// Créneaux de retrait toutes les heures (heures pleines), de 8h à 18h
+export const PICKUP_SLOT_MINUTES = 60;
 export const PICKUP_SLOTS: string[] = (() => {
   const slots: string[] = [];
   const [startH, startM] = PICKUP_MIN_TIME.split(':').map(Number);
@@ -120,7 +120,7 @@ export default function PickupSlotSelector({ overrides, date, time, onChange }: 
               <Clock className="w-4 h-4" />
               Heure de retrait <span className="text-red-500">*</span>
             </p>
-            <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
+            <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
               {PICKUP_SLOTS.map((slot) => {
                 const isSelected = time === slot;
                 return (
