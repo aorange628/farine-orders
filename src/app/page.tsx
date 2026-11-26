@@ -4,8 +4,10 @@ import { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import ProductList from '@/components/ProductList';
 import Cart, { OrderFormData } from '@/components/Cart';
-import { Product } from '@/types';
-import { CheckCircle, MapPin } from 'lucide-react';
+import PickupSlotSelector, { isPickupDateAllowed, isPickupTimeAllowed } from '@/components/PickupSlotSelector';
+import { supabase } from '@/lib/supabase';
+import { Product, CalendarOverride } from '@/types';
+import { CheckCircle, MapPin, Phone } from 'lucide-react';
 import { STORES, getStore, isValidPickupLocation, PickupLocation } from '@/lib/stores';
 import { formatPrice, formatDate } from '@/lib/utils';
 
@@ -46,6 +48,28 @@ export default function HomePage() {
   );
   const [orderRecap, setOrderRecap] = useState<OrderRecap | null>(null);
   const [pickupLocation, setPickupLocation] = useState<PickupLocation | null>(null);
+  const [pickupDate, setPickupDate] = useState('');
+  const [pickupTime, setPickupTime] = useState('');
+  const [overrides, setOverrides] = useState<Map<string, CalendarOverride>>(new Map());
+
+  // Calendrier admin (fermetures exceptionnelles, dates limites)
+  useEffect(() => {
+    async function fetchOverrides() {
+      try {
+        const { data, error } = await supabase.from('calendar_overrides').select('*');
+        if (error) throw error;
+        setOverrides(new Map((data || []).map((o: CalendarOverride) => [o.date, o])));
+      } catch (error) {
+        console.error('Erreur chargement calendrier:', error);
+      }
+    }
+    fetchOverrides();
+  }, []);
+
+  const pickupReady = !!pickupDate && !!pickupTime;
+  const pickupLabel = pickupReady
+    ? `${formatDate(new Date(pickupDate + 'T00:00:00'), 'EEEE d MMMM')} à ${formatTime(pickupTime)}`
+    : '';
 
   const selectedStore = getStore(pickupLocation);
 
@@ -101,6 +125,12 @@ export default function HomePage() {
     if (!pickupLocation) {
       throw new Error('Merci de choisir une boutique de retrait');
     }
+    // Revérifier le créneau : le délai a pu être dépassé pendant la commande (ex. passage de 11h)
+    if (!isPickupDateAllowed(pickupDate, overrides) || !isPickupTimeAllowed(pickupTime)) {
+      setPickupDate('');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      throw new Error('Le délai de commande pour la date choisie est dépassé. Merci de choisir une nouvelle date de retrait en haut de la page.');
+    }
 
     const items = Array.from(cart.values()).map(({ product, quantity }) => ({
       product_id: product.id,
@@ -117,6 +147,8 @@ export default function HomePage() {
       body: JSON.stringify({
         ...orderData,
         pickup_location: pickupLocation,
+        pickup_date: pickupDate,
+        pickup_time: pickupTime,
         items,
       }),
     });
@@ -137,8 +169,8 @@ export default function HomePage() {
     }));
     setOrderRecap({
       location: pickupLocation,
-      pickupDate: orderData.pickup_date,
-      pickupTime: orderData.pickup_time,
+      pickupDate,
+      pickupTime,
       items: recapItems,
       total: recapItems.reduce((sum, item) => sum + item.subtotal, 0),
     });
@@ -193,6 +225,10 @@ export default function HomePage() {
                       <p className="font-bold text-gray-900">{store.name}</p>
                       <p className="text-sm text-gray-600">{store.address}</p>
                       <p className="text-sm text-gray-600">{store.city}</p>
+                      <p className="text-sm text-gray-600 flex items-center gap-1 mt-1">
+                        <Phone className="w-3.5 h-3.5" />
+                        {store.phone}
+                      </p>
                     </div>
                   </div>
                 </button>
@@ -205,6 +241,19 @@ export default function HomePage() {
             </p>
           )}
         </section>
+
+        {/* Étape 2 : date et heure de retrait */}
+        {selectedStore && (
+          <PickupSlotSelector
+            overrides={overrides}
+            date={pickupDate}
+            time={pickupTime}
+            onChange={(date, time) => {
+              setPickupDate(date);
+              setPickupTime(time);
+            }}
+          />
+        )}
       </Header>
 
 
@@ -230,6 +279,11 @@ export default function HomePage() {
                   <p className="font-bold text-farine-green">{recapStore.name}</p>
                   <p className="text-sm text-gray-700">
                     {recapStore.address}, {recapStore.city}
+                  </p>
+                  <p className="text-sm text-gray-700">
+                    <a href={`tel:${recapStore.phone.replace(/\s/g, '')}`} className="hover:underline">
+                      {recapStore.phone}
+                    </a>
                   </p>
                 </>
               )}
@@ -276,8 +330,8 @@ export default function HomePage() {
       )}
 
       <main className="container mx-auto px-4 py-8">
-        {/* Étape 2 : catalogue + panier (affichés une fois la boutique choisie) */}
-        {selectedStore && (
+        {/* Étape 3 : catalogue + panier (affichés une fois la boutique, la date et l'heure choisies) */}
+        {selectedStore && pickupReady && (
           <div id="catalogue" className="grid grid-cols-1 lg:grid-cols-3 gap-8 scroll-mt-4">
             {/* Colonne principale : Liste des produits */}
             <div className="lg:col-span-2">
@@ -290,6 +344,7 @@ export default function HomePage() {
                 <Cart
                   cart={cart}
                   storeName={selectedStore.name}
+                  pickupLabel={pickupLabel}
                   onRemoveFromCart={handleRemoveFromCart}
                   onUpdateQuantity={handleUpdateQuantity}
                   onSubmitOrder={handleSubmitOrder}
@@ -309,6 +364,7 @@ export default function HomePage() {
               <div key={store.id}>
                 <p className="text-farine-beige-light mb-1">{store.address}</p>
                 <p className="text-farine-beige-light">{store.city}</p>
+                <p className="text-farine-beige-light">{store.phone}</p>
               </div>
             ))}
           </div>

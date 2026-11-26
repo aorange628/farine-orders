@@ -146,7 +146,7 @@ export default function MonthCalendar() {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6 max-w-4xl mx-auto">
+      <div className="bg-white rounded-lg shadow-md p-4 max-w-sm mx-auto">
         <div className="flex justify-center items-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-farine-green"></div>
         </div>
@@ -165,24 +165,24 @@ export default function MonthCalendar() {
   today.setHours(0, 0, 0, 0);
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 max-w-4xl mx-auto">
+    <div className="bg-white rounded-lg shadow-md p-4 max-w-sm mx-auto">
       {/* Navigation */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-3">
         <button
           onClick={previousMonth}
           className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           aria-label="Mois précédent"
         >
-          <ChevronLeft className="w-6 h-6 text-gray-600" />
+          <ChevronLeft className="w-5 h-5 text-gray-600" />
         </button>
 
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 capitalize">
+          <h2 className="text-lg font-bold text-gray-900 capitalize">
             {format(currentMonth, 'MMMM yyyy', { locale: fr })}
           </h2>
           <button
             onClick={goToToday}
-            className="text-sm text-farine-green hover:underline mt-1"
+            className="text-xs text-farine-green hover:underline"
           >
             Aujourd'hui
           </button>
@@ -193,16 +193,16 @@ export default function MonthCalendar() {
           className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           aria-label="Mois suivant"
         >
-          <ChevronRight className="w-6 h-6 text-gray-600" />
+          <ChevronRight className="w-5 h-5 text-gray-600" />
         </button>
       </div>
 
       {/* Jours de la semaine */}
-      <div className="grid grid-cols-7 gap-2 mb-2">
+      <div className="grid grid-cols-7 gap-1 mb-1">
         {['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'].map(day => (
           <div
             key={day}
-            className="text-center text-sm font-semibold text-gray-600 py-2"
+            className="text-center text-xs font-semibold text-gray-600 py-1"
           >
             {day}
           </div>
@@ -210,7 +210,7 @@ export default function MonthCalendar() {
       </div>
 
       {/* Grille du calendrier */}
-      <div className="grid grid-cols-7 gap-2">
+      <div className="grid grid-cols-7 gap-1">
         {days.map(day => {
           const dayInfo = getDayInfo(day);
           const isToday = day.getTime() === today.getTime();
@@ -225,18 +225,18 @@ export default function MonthCalendar() {
             >
               <div
                 className={`
-                  aspect-square flex flex-col items-center justify-center rounded-lg
+                  aspect-square flex flex-col items-center justify-center rounded-md
                   transition-all cursor-default
                   ${getDayColor(dayInfo)}
-                  ${isToday ? 'ring-2 ring-farine-green ring-offset-2' : ''}
+                  ${isToday ? 'ring-2 ring-farine-green ring-offset-1' : ''}
                   ${isHovered ? 'transform scale-110 shadow-lg z-10' : ''}
                 `}
               >
-                <span className="text-lg font-semibold">
+                <span className="text-sm font-semibold">
                   {format(day, 'd')}
                 </span>
                 {dayInfo.reason && (
-                  <span className="text-xs mt-1 text-center px-1 line-clamp-1">
+                  <span className="hidden">
                     {dayInfo.reason}
                   </span>
                 )}
@@ -270,27 +270,26 @@ export default function MonthCalendar() {
       </div>
 
       {/* Légende */}
-      <div className="mt-6 pt-4 border-t border-gray-200">
-        <h3 className="text-sm font-semibold text-gray-700 mb-3">Légende :</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+      <div className="mt-3 pt-3 border-t border-gray-200">
+        <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-green-100 border border-green-300 rounded"></div>
+            <div className="w-3.5 h-3.5 bg-green-100 border border-green-300 rounded"></div>
             <span className="text-gray-700">Ouvert</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-gray-300 rounded"></div>
+            <div className="w-3.5 h-3.5 bg-gray-300 rounded"></div>
             <span className="text-gray-700">Fermé (défaut)</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-red-500 rounded"></div>
+            <div className="w-3.5 h-3.5 bg-red-500 rounded"></div>
             <span className="text-gray-700">Fermé (exception)</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-orange-400 rounded"></div>
+            <div className="w-3.5 h-3.5 bg-orange-400 rounded"></div>
             <span className="text-gray-700">Ouvert (exception)</span>
           </div>
         </div>
-        <p className="text-xs text-gray-500 mt-3">
+        <p className="text-xs text-gray-500 mt-2">
           💡 Survolez un jour pour voir les horaires détaillés
         </p>
       </div>

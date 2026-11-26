@@ -10,6 +10,7 @@ export interface Store {
   shortName: string;   // Nom court (back office, badges)
   address: string;
   city: string;
+  phone: string;       // Téléphone affiché au client
   badgeClass: string;  // Couleur du badge dans le back office
 }
 
@@ -20,6 +21,7 @@ export const STORES: Store[] = [
     shortName: 'Pré',
     address: '37 rue de Stalingrad',
     city: '93310 Le Pré Saint-Gervais',
+    phone: '09 73 88 95 53',
     badgeClass: 'bg-amber-100 text-amber-800 border border-amber-300',
   },
   {
@@ -28,6 +30,7 @@ export const STORES: Store[] = [
     shortName: 'Lilas',
     address: '7 boulevard de la Liberté',
     city: '93260 Les Lilas',
+    phone: '01 86 04 38 17',
     badgeClass: 'bg-violet-100 text-violet-800 border border-violet-300',
   },
 ];
