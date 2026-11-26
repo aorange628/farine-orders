@@ -29,8 +29,26 @@ export function isPickupDateAllowed(date: string, overrides: Map<string, Calenda
   return isDateSelectableForPickup(new Date(date + 'T00:00:00'), overrides, minDate);
 }
 
+// Créneaux de retrait toutes les 30 minutes, de 8h00 à 18h00
+export const PICKUP_SLOT_MINUTES = 30;
+export const PICKUP_SLOTS: string[] = (() => {
+  const slots: string[] = [];
+  const [startH, startM] = PICKUP_MIN_TIME.split(':').map(Number);
+  const [endH, endM] = PICKUP_MAX_TIME.split(':').map(Number);
+  for (let m = startH * 60 + startM; m <= endH * 60 + endM; m += PICKUP_SLOT_MINUTES) {
+    slots.push(`${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`);
+  }
+  return slots;
+})();
+
+// "09:30" → "9h30" ; "10:00" → "10h"
+function slotLabel(slot: string): string {
+  const [h, m] = slot.split(':');
+  return `${parseInt(h, 10)}h${m === '00' ? '' : m}`;
+}
+
 export function isPickupTimeAllowed(time: string): boolean {
-  return !!time && time >= PICKUP_MIN_TIME && time <= PICKUP_MAX_TIME;
+  return PICKUP_SLOTS.includes(time);
 }
 
 interface PickupSlotSelectorProps {
@@ -42,7 +60,6 @@ interface PickupSlotSelectorProps {
 
 export default function PickupSlotSelector({ overrides, date, time, onChange }: PickupSlotSelectorProps) {
   const [minDate, setMinDate] = useState('');
-  const [timeError, setTimeError] = useState('');
 
   // Date minimum selon les règles de délai (recalculée quand le calendrier est chargé)
   useEffect(() => {
@@ -61,21 +78,6 @@ export default function PickupSlotSelector({ overrides, date, time, onChange }: 
     if (isPickupDateAllowed(selected, overrides)) {
       onChange(selected, time);
     }
-  }
-
-  function handleTimeChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const selected = e.target.value;
-    if (!selected) {
-      onChange(date, '');
-      return;
-    }
-    if (!isPickupTimeAllowed(selected)) {
-      setTimeError('Les commandes peuvent être retirées entre 8h et 18h');
-      onChange(date, '');
-      return;
-    }
-    setTimeError('');
-    onChange(date, selected);
   }
 
   return (
@@ -114,19 +116,29 @@ export default function PickupSlotSelector({ overrides, date, time, onChange }: 
           </div>
 
           <div>
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+            <p className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
               <Clock className="w-4 h-4" />
               Heure de retrait <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="time"
-              value={time}
-              min={PICKUP_MIN_TIME}
-              max={PICKUP_MAX_TIME}
-              onChange={handleTimeChange}
-              className={timeError ? 'border-red-500' : ''}
-            />
-            {timeError && <p className="text-red-500 text-sm mt-1">{timeError}</p>}
+            </p>
+            <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
+              {PICKUP_SLOTS.map((slot) => {
+                const isSelected = time === slot;
+                return (
+                  <button
+                    key={slot}
+                    type="button"
+                    onClick={() => onChange(date, slot)}
+                    className={`rounded-md border py-1.5 text-sm font-medium transition-colors ${
+                      isSelected
+                        ? 'bg-farine-green border-farine-green text-white'
+                        : 'bg-white border-gray-300 text-gray-700 hover:border-farine-green hover:bg-green-50'
+                    }`}
+                  >
+                    {slotLabel(slot)}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {minDate && (
