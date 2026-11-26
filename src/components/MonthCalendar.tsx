@@ -22,8 +22,23 @@ interface Settings {
   [key: string]: string;
 }
 
-export default function MonthCalendar() {
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+// Mode sélection (formulaire client) : si onSelectDate est fourni, les jours
+// sélectionnables sont cliquables, les autres sont grisés.
+interface MonthCalendarProps {
+  selectedDate?: string;                    // YYYY-MM-DD
+  isSelectable?: (date: Date) => boolean;   // jour réservable ?
+  onSelectDate?: (date: string) => void;    // clic sur un jour réservable
+}
+
+function toDateString(date: Date): string {
+  return format(date, 'yyyy-MM-dd');
+}
+
+export default function MonthCalendar({ selectedDate, isSelectable, onSelectDate }: MonthCalendarProps = {}) {
+  const selectionMode = !!onSelectDate;
+  const [currentMonth, setCurrentMonth] = useState(
+    selectedDate ? new Date(selectedDate + 'T00:00:00') : new Date()
+  );
   const [overrides, setOverrides] = useState<CalendarOverride[]>([]);
   const [settings, setSettings] = useState<Settings>({});
   const [loading, setLoading] = useState(true);
@@ -215,6 +230,21 @@ export default function MonthCalendar() {
           const dayInfo = getDayInfo(day);
           const isToday = day.getTime() === today.getTime();
           const isHovered = hoveredDay?.getTime() === day.getTime();
+          const dayString = toDateString(day);
+          const selectable = selectionMode && dayInfo.isCurrentMonth && !!isSelectable?.(day);
+          const isSelected = selectionMode && selectedDate === dayString;
+
+          // Couleur : en mode sélection, les jours ouverts non réservables sont grisés
+          let colorClass = getDayColor(dayInfo);
+          if (selectionMode && dayInfo.isCurrentMonth) {
+            if (isSelected) {
+              colorClass = 'bg-farine-green text-white font-bold';
+            } else if (selectable) {
+              colorClass = 'bg-green-100 text-green-800 border border-green-400 hover:bg-green-200 cursor-pointer';
+            } else if (!dayInfo.isClosed) {
+              colorClass = 'bg-gray-100 text-gray-400 line-through';
+            }
+          }
 
           return (
             <div
@@ -224,12 +254,22 @@ export default function MonthCalendar() {
               onMouseLeave={() => setHoveredDay(null)}
             >
               <div
+                role={selectionMode ? 'button' : undefined}
+                aria-disabled={selectionMode ? !selectable : undefined}
+                tabIndex={selectable ? 0 : undefined}
+                onClick={() => { if (selectable) onSelectDate?.(dayString); }}
+                onKeyDown={(e) => {
+                  if (selectable && (e.key === 'Enter' || e.key === ' ')) {
+                    e.preventDefault();
+                    onSelectDate?.(dayString);
+                  }
+                }}
                 className={`
                   aspect-square flex flex-col items-center justify-center rounded-md
-                  transition-all cursor-default
-                  ${getDayColor(dayInfo)}
+                  transition-all ${selectable ? 'cursor-pointer' : 'cursor-default'}
+                  ${colorClass}
                   ${isToday ? 'ring-2 ring-farine-green ring-offset-1' : ''}
-                  ${isHovered ? 'transform scale-110 shadow-lg z-10' : ''}
+                  ${isHovered && (!selectionMode || selectable) ? 'transform scale-110 shadow-lg z-10' : ''}
                 `}
               >
                 <span className="text-sm font-semibold">
@@ -250,6 +290,8 @@ export default function MonthCalendar() {
                   </div>
                   {dayInfo.isClosed ? (
                     <div className="text-red-300">Fermé</div>
+                  ) : selectionMode && !selectable ? (
+                    <div className="text-gray-300">Indisponible (délai de commande)</div>
                   ) : (
                     <div>
                       {dayInfo.openTime} - {dayInfo.closeTime}
@@ -270,6 +312,31 @@ export default function MonthCalendar() {
       </div>
 
       {/* Légende */}
+      {selectionMode ? (
+        <div className="mt-3 pt-3 border-t border-gray-200">
+          <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+            <div className="flex items-center gap-2">
+              <div className="w-3.5 h-3.5 bg-green-100 border border-green-400 rounded"></div>
+              <span className="text-gray-700">Disponible</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3.5 h-3.5 bg-farine-green rounded"></div>
+              <span className="text-gray-700">Votre choix</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3.5 h-3.5 bg-gray-100 border border-gray-300 rounded"></div>
+              <span className="text-gray-700">Délai dépassé</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3.5 h-3.5 bg-gray-300 rounded"></div>
+              <span className="text-gray-700">Fermé</span>
+            </div>
+          </div>
+          <p className="text-xs text-gray-500 mt-2">
+            👆 Cliquez sur un jour disponible pour le choisir
+          </p>
+        </div>
+      ) : (
       <div className="mt-3 pt-3 border-t border-gray-200">
         <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
           <div className="flex items-center gap-2">
@@ -293,6 +360,7 @@ export default function MonthCalendar() {
           💡 Survolez un jour pour voir les horaires détaillés
         </p>
       </div>
+      )}
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { CalendarOverride } from '@/types';
 import { calculateEarliestPickupDate, isDateSelectableForPickup, formatDate, ORDER_CUTOFF_HOUR } from '@/lib/utils';
 import { Calendar, Clock } from 'lucide-react';
+import MonthCalendar from '@/components/MonthCalendar';
 
 // Plage horaire de retrait
 export const PICKUP_MIN_TIME = '08:00';
@@ -41,7 +42,6 @@ interface PickupSlotSelectorProps {
 
 export default function PickupSlotSelector({ overrides, date, time, onChange }: PickupSlotSelectorProps) {
   const [minDate, setMinDate] = useState('');
-  const [dateError, setDateError] = useState('');
   const [timeError, setTimeError] = useState('');
 
   // Date minimum selon les règles de délai (recalculée quand le calendrier est chargé)
@@ -56,19 +56,11 @@ export default function PickupSlotSelector({ overrides, date, time, onChange }: 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [overrides]);
 
-  function handleDateChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const selected = e.target.value;
-    if (!selected) {
-      onChange('', time);
-      return;
+  // Clic sur un jour du calendrier (seuls les jours réservables sont cliquables)
+  function handleSelectDate(selected: string) {
+    if (isPickupDateAllowed(selected, overrides)) {
+      onChange(selected, time);
     }
-    if (!isPickupDateAllowed(selected, overrides)) {
-      setDateError('Ce jour n\'est pas disponible (boutique fermée ou délai dépassé). Merci de choisir un autre jour.');
-      onChange('', time);
-      return;
-    }
-    setDateError('');
-    onChange(selected, time);
   }
 
   function handleTimeChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -95,55 +87,66 @@ export default function PickupSlotSelector({ overrides, date, time, onChange }: 
         </h2>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+        {/* Calendrier : choix du jour */}
         <div>
-          <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+          <p className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
             <Calendar className="w-4 h-4" />
-            Date de retrait <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="date"
-            value={date}
-            min={minDate}
-            onChange={handleDateChange}
-            className={dateError ? 'border-red-500' : ''}
+            Jour de retrait <span className="text-red-500">*</span>
+          </p>
+          <MonthCalendar
+            key={minDate}
+            selectedDate={date}
+            isSelectable={(day) => isPickupDateAllowed(toDateString(day), overrides)}
+            onSelectDate={handleSelectDate}
           />
-          {dateError && <p className="text-red-500 text-sm mt-1">{dateError}</p>}
         </div>
 
-        <div>
-          <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-            <Clock className="w-4 h-4" />
-            Heure de retrait <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="time"
-            value={time}
-            min={PICKUP_MIN_TIME}
-            max={PICKUP_MAX_TIME}
-            onChange={handleTimeChange}
-            className={timeError ? 'border-red-500' : ''}
-          />
-          {timeError && <p className="text-red-500 text-sm mt-1">{timeError}</p>}
+        {/* Jour choisi + heure */}
+        <div className="space-y-4">
+          <div className="p-3 bg-farine-beige rounded-lg">
+            <p className="text-sm text-gray-600">Jour choisi</p>
+            <p className="font-bold text-farine-green first-letter:uppercase">
+              {date
+                ? formatDate(new Date(date + 'T00:00:00'), 'EEEE d MMMM yyyy')
+                : 'Cliquez sur un jour disponible dans le calendrier'}
+            </p>
+          </div>
+
+          <div>
+            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+              <Clock className="w-4 h-4" />
+              Heure de retrait <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="time"
+              value={time}
+              min={PICKUP_MIN_TIME}
+              max={PICKUP_MAX_TIME}
+              onChange={handleTimeChange}
+              className={timeError ? 'border-red-500' : ''}
+            />
+            {timeError && <p className="text-red-500 text-sm mt-1">{timeError}</p>}
+          </div>
+
+          {minDate && (
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
+              <p>
+                <strong>📅 Retrait possible au plus tôt :</strong>{' '}
+                {formatDate(new Date(minDate + 'T00:00:00'), 'EEEE d MMMM yyyy')}
+              </p>
+              <p className="mt-1 text-blue-700">
+                Commande avant {ORDER_CUTOFF_HOUR}h : retrait dès le jour d'ouverture suivant.
+                Après {ORDER_CUTOFF_HOUR}h, ou le dimanche et le lundi : un jour d'ouverture de plus.
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
-      {minDate && (
-        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
-          <p>
-            <strong>📅 Retrait possible au plus tôt :</strong>{' '}
-            {formatDate(new Date(minDate + 'T00:00:00'), 'EEEE d MMMM yyyy')}
-          </p>
-          <p className="mt-1 text-blue-700">
-            Commande avant {ORDER_CUTOFF_HOUR}h : retrait dès le jour d'ouverture suivant.
-            Après {ORDER_CUTOFF_HOUR}h, ou le dimanche et le lundi : un jour d'ouverture de plus.
-          </p>
-        </div>
-      )}
-
       {(!date || !time) && (
         <p className="text-sm text-gray-500 mt-4">
-          Choisissez une date et une heure pour accéder au catalogue.
+          Choisissez un jour et une heure pour accéder au catalogue.
         </p>
       )}
     </section>

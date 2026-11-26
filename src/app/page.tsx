@@ -190,7 +190,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-farine-beige-light">
-      <Header>
+      <Header showCalendar={false}>
         {/* Étape 1 : choix de la boutique de retrait */}
         <section className="bg-white rounded-lg shadow-md p-6 mb-6 max-w-4xl mx-auto">
           <div className="flex items-center gap-2 mb-4">

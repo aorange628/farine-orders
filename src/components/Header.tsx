@@ -7,7 +7,9 @@ import MonthCalendar from '@/components/MonthCalendar';
 
 // children : contenu affiché entre le message d'accueil et le calendrier
 // (utilisé pour le choix de la boutique de retrait)
-export default function Header({ children }: { children?: ReactNode }) {
+// showCalendar : afficher le calendrier d'information (désactivé sur la page de
+// commande, où le calendrier sert à choisir le jour de retrait)
+export default function Header({ children, showCalendar = true }: { children?: ReactNode; showCalendar?: boolean }) {
   const [welcomeMessage, setWelcomeMessage] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -67,7 +69,7 @@ export default function Header({ children }: { children?: ReactNode }) {
         {children}
 
         {/* Calendrier mensuel */}
-        {!loading && <MonthCalendar />}
+        {!loading && showCalendar && <MonthCalendar />}
       </div>
     </header>
   );
